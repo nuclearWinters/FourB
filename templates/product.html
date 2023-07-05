@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  </head>
+  <body>
+    <script>
+      const addToCart = async () => {
+        const response = await fetch('http://localhost:8000/add-to-cart', {
+          method: "POST",
+          headers: {
+            authorization: sessionStorage.getItem("accessToken"),
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            product_id: "{{_id}}",
+            qty: 1
+          })
+        })
+        const data = await response.json()
+        if (response.status === 200) {
+          alert("Added to cart")
+        }
+      }
+      const goToCart = () => {
+        window.location.href = "/cart"
+      }
+    </script>
+    <button onclick="goToCart()">Cart</button>
+    <p>
+      {{name}}
+    </p>
+    <p>
+      Price: {{price}}
+    </p>
+    <button onclick="addToCart()">Add to Cart</button>
+  </body>
+</html>

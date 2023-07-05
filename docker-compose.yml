@@ -1,0 +1,25 @@
+version: "3"
+services:
+  backend-ssg:
+    container_name: backend-ssg
+    image: node:18
+    volumes:
+      - .:/usr/src/service
+    working_dir: /usr/src/service
+    command:
+      ["npm", "run", "start"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo-fourb
+
+  mongo-fourb:
+    container_name: mongo-fourb
+    image: mongo
+    volumes:
+      - ./data:/data/db
+    ports:
+      - "27017:27017"
+    logging:
+      driver: none
+    entrypoint: ["/usr/bin/mongod", "--bind_ip_all"]
