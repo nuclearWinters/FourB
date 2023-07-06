@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  </head>
+  <script
+      type="module"
+      crossorigin
+      src="https://assets.conekta.com/component/2.0.2/assets/component.min.js"
+    ></script>
+    <script type="module" crossorigin defer>
+      const checkout_id = localStorage.getItem("checkout_id")
+      if (checkout_id) {
+        const config = {
+          checkoutRequestId: checkout_id,
+          publicKey: 'key_FSmk9b0tZ8KedYKgLqOgerF',
+          targetIFrame: 'example',
+        };
+        const callbacks = {
+          onFinalizePayment: async (event) => {
+            console.log(event)
+            try {
+              localStorage.removeItem("checkout_id")
+              const response = await fetch('http://localhost:8000/confirmation', {
+                credentials: "include",
+                headers: {
+                  "Content-Type": "application/json",
+                  authorization: sessionStorage.getItem("accessToken"),
+                }
+              })
+              if (response.headers.accessToken) {
+                sessionStorage("accessToken", response.headers.accessToken)
+              }
+              if (response.status !== 200) {
+                throw new Error(data)
+              }
+            } catch {}
+          },
+          onErrorPayment: (event) => console.log(event),
+          onGetInfoSuccess: async (event) => console.log(event),
+        };
+        window.ConektaCheckoutComponents.Integration({ config, callbacks });
+      }
+    </script>
+  <body>
+    <script>
+        fetch('http://localhost:8000/add-to-cart')
+        .then(response => response.json())
+        .then(json => {
+          const list = document.querySelector('#products')
+          json.forEach((product, idx) => {
+            const projectEl = document.createElement('div')
+            projectEl.id = `${idx}-product`
+            const name = document.createElement('div')
+            name.textContent = product.name
+            const price = document.createElement('div')
+            price.textContent = product.price
+            projectEl.appendChild(name)
+            projectEl.appendChild(price)
+            const quantity = document.createElement('div')
+            quantity.innerText = product.qty
+            projectEl.appendChild(quantity)
+            const viewButton = document.createElement('button')
+            viewButton.onclick = () => {
+              window.location.href = `/product-${product._id}`;
+            }
+            viewButton.textContent = "VIEW"
+            projectEl.appendChild(viewButton)
+            list.appendChild(projectEl)
+          })
+        });
+      const pay = () => {
+        window.location.href = "/confirmation"
+      }
+    </script>
+    <button>Cart</button>
+    <p>
+      Products in cart
+    </p>
+    <div id="products"></div>
+    <form>
+      <div id="example" style="width: 500px; margin: 0 auto"></div>
+      <button type="submit" onclick="pay()">Pagar</button>
+    </form>
+  </body>
+</html>

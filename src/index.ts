@@ -19,20 +19,13 @@ export const REFRESHSECRET = process.env.REFRESHSECRET || "REFRESHSECRET";
 export const ACCESSSECRET = process.env.ACCESSSECRET || "ACCESSSECRET";
 export const NODE_ENV = process.env.NODE_ENV || "development";
 
-/*
-Guardar usuario sin o con contraseña
-Mandar email para generar contraseña
-Guardar direcciones
-*/
-
 interface UserMongo {
     _id?: ObjectId;
     email: string;
     password: string;
     cart_id: ObjectId;
     name: string;
-    apellido_paterno: string;
-    apellido_materno: string;
+    apellidos: string;
     phone: string;
     conekta_id: string;
     default_address: ObjectId | null;
@@ -47,8 +40,31 @@ interface UserMongo {
         state: string;
         phone: string;
         name: string;
-        apellidoMaterno: string;
-        apellidoPaterno: string;
+        apellidos: string;
+    }[]
+}
+
+interface SessionMongo {
+    _id?: ObjectId;
+    email: string | null;
+    cart_id: ObjectId;
+    name: string | null;
+    apellidos: string | null;
+    phone: string | null;
+    conekta_id: string | null;
+    default_address: ObjectId | null;
+    addresses: {
+        _id: ObjectId;
+        full_address: string;
+        country: string;
+        street: string;
+        colonia: string;
+        zip: string;
+        city: string;
+        state: string;
+        phone: string;
+        name: string;
+        apellidos: string;
     }[]
 }
 
@@ -85,11 +101,14 @@ interface ReservedInventoryMongo {
 interface Context {
     id?: string;
     cart_id?: string;
+    session_id: string;
+    session_cart_id: string;
     users: Collection<UserMongo>;
     inventory: Collection<InventoryMongo>;
     itemsByCart: Collection<ItemsByCartMongo>;
     cartsByUser: Collection<CartsByUserMongo>;
     reservedInventory: Collection<ReservedInventoryMongo>;
+    sessions: Collection<SessionMongo>
 }
 
 export interface DecodeJWT {
@@ -170,7 +189,39 @@ app.use((req, res, next) => {
         }
     }
     next()
-  })
+})
+
+app.use(async (req, res, next) => {
+    const { sessions, cartsByUser } = req.app.locals as Context
+    if ((!req.cookies.session_id || !req.cookies.cart_id) && !req.app.locals.id) {
+        const session_id = new ObjectId()
+        const cart_id = new ObjectId()
+        res.cookie("session_id", session_id)
+        res.cookie("cart_id", cart_id)
+        await sessions.insertOne({
+            _id: session_id,
+            name: null,
+            apellidos: null,
+            email: null,
+            cart_id,
+            addresses: [],
+            phone: null,
+            conekta_id: null,
+            default_address: null,
+        })
+        await cartsByUser.insertOne({
+            _id: cart_id,
+            user_id: session_id,
+            expireDate: null
+        })
+        req.app.locals.session_id = session_id.toHexString()
+        req.app.locals.cart_id = cart_id.toHexString()
+    } else {
+        req.app.locals.session_id = req.cookies.session_id
+        req.app.locals.session_cart_id = req.cookies.cart_id
+    }
+    next()
+})
 
 app.get('/inventory', async (req, res) => {
     const { inventory } = req.app.locals as Context
@@ -234,7 +285,8 @@ app.patch('/inventory', async (req, res) => {
             throw new Error("At least one field is required")
         }
         const { inventory, itemsByCart } = req.app.locals as Context
-        const result = await inventory.updateOne({ _id: new ObjectId(id), qty: { $gte: -increment } },{
+        const product_oid = new ObjectId(id)
+        const result = await inventory.updateOne({ _id: product_oid, qty: { $gte: -increment } },{
             ...(increment ? {
                 $inc: {
                     available: increment,
@@ -252,7 +304,7 @@ app.patch('/inventory', async (req, res) => {
             throw new Error("Not enough inventory or product not found")
         }
         if (price) {
-            await itemsByCart.updateMany({ product_id: new ObjectId(id) }, { price })
+            await itemsByCart.updateMany({ product_id: product_oid }, { price })
         }
         res.status(200).json("OK!")
     } catch(e) {
@@ -274,7 +326,8 @@ app.get('/user', async (req, res) => {
             throw new Error("ID must contain 24 characters")
         }
         const { users } = req.app.locals as Context
-        const user = await users.findOne({ _id: new ObjectId(id) })
+        const user_oid = new ObjectId(id)
+        const user = await users.findOne({ _id: user_oid })
         if (!user) {
             throw new Error("No user found")
         }
@@ -296,8 +349,7 @@ app.post('/register', async (req, res) => {
         const email = req.body.email
         const password = req.body.password
         const name = req.body.name
-        const apellidoPaterno = req.body.apellidoPaterno
-        const apellidoMaterno = req.body.apellidoMaterno
+        const apellidos = req.body.apellidos
         const phone = req.body.phone
         if (typeof email !== "string") {
             throw new Error("Email is required and must be a string")
@@ -311,10 +363,7 @@ app.post('/register', async (req, res) => {
         if (typeof name !== "string") {
             throw new Error("Password is required and must be a string")
         }
-        if (typeof apellidoPaterno !== "string") {
-            throw new Error("Password is required and must be a string")
-        }
-        if (typeof apellidoMaterno !== "string") {
+        if (typeof apellidos !== "string") {
             throw new Error("Password is required and must be a string")
         }
         if (typeof phone !== "string") {
@@ -356,7 +405,7 @@ app.post('/register', async (req, res) => {
           secure: NODE_ENV === "production" ? true : false,
         });
         const customer = await customerClient.createCustomer({
-            name: `${name} ${apellidoMaterno} ${apellidoPaterno}` ,
+            name: `${name} ${apellidos}` ,
             email,
             phone,
         });
@@ -366,8 +415,7 @@ app.post('/register', async (req, res) => {
             password: hash_password,
             cart_id,
             name,
-            apellido_materno: apellidoMaterno,
-            apellido_paterno: apellidoPaterno,
+            apellidos,
             conekta_id: customer.data.id,
             phone,
             default_address: null,
@@ -457,6 +505,7 @@ app.post('/log-in', async (req, res) => {
 
 app.post('/add-to-cart', async (req, res) => {
     try {
+        const { inventory, itemsByCart, cart_id, reservedInventory, cartsByUser, session_cart_id } = req.app.locals as Context
         const product_id = req.body.product_id
         const qty = req.body.qty
         if (typeof product_id !== "string") {
@@ -468,15 +517,10 @@ app.post('/add-to-cart', async (req, res) => {
         if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
-        const { inventory, itemsByCart, cart_id, reservedInventory, cartsByUser } = req.app.locals as Context
-        if (typeof cart_id !== "string") {
-            throw new Error("Cart ID is required and must be a string")
-        }
-        if (cart_id.length !== 24) {
-            throw new Error("Cart ID must contain 24 characters")
-        }
+        const cart_oid = new ObjectId(cart_id || session_cart_id)
+        const product_oid = new ObjectId(product_id)
         const product = await inventory.findOneAndUpdate({
-            _id: new ObjectId(product_id),
+            _id: product_oid,
             available: {
                 $gte: qty
             }
@@ -485,6 +529,9 @@ app.post('/add-to-cart', async (req, res) => {
             $inc: {
                 available: -qty
             }
+        },
+        {
+            returnDocument: "after"
         })
         if (!product.value) {
             throw new Error("Not enough inventory or product not found")
@@ -492,18 +539,17 @@ app.post('/add-to-cart', async (req, res) => {
         const expireDate = new Date()
         expireDate.setHours(expireDate.getHours() + 1)
         const reserved = await reservedInventory.updateOne({
-            cart_id: new ObjectId(cart_id),
-            product_id: new ObjectId(product_id),
+            cart_id: cart_oid,
+            product_id: product_oid,
         },
         {
             $inc: {
                 qty,
             },
             $setOnInsert: {
-                qty,
                 price: product.value.price,
-                cart_id: new ObjectId(cart_id),
-                product_id: new ObjectId(product_id),
+                cart_id: cart_oid,
+                product_id: product_oid,
             },
         },
         {
@@ -514,8 +560,8 @@ app.post('/add-to-cart', async (req, res) => {
         }
         const result = await itemsByCart.updateOne(
             {
-                product_id: new ObjectId(product_id),
-                cart_id: new ObjectId(cart_id),
+                product_id: product_oid,
+                cart_id: cart_oid,
             },
             {
                 $inc: {
@@ -523,8 +569,8 @@ app.post('/add-to-cart', async (req, res) => {
                 },
                 $setOnInsert: {
                     name: product.value.name,
-                    product_id: new ObjectId(product_id),
-                    cart_id: new ObjectId(cart_id),
+                    product_id: product_oid,
+                    cart_id: cart_oid,
                     price: product.value.price,
                 }
             },
@@ -536,10 +582,12 @@ app.post('/add-to-cart', async (req, res) => {
             throw new Error("Item not added to cart.")
         }
         await cartsByUser.updateOne({
-            _id: new ObjectId(cart_id),
+            _id: cart_oid,
         },
         {
-            expireDate
+            $set: {
+                expireDate
+            }
         })
         res.status(200).json("OK!")
     } catch(e) {
@@ -553,6 +601,7 @@ app.post('/add-to-cart', async (req, res) => {
 
 app.patch('/add-to-cart', async (req, res) => {
     try {
+        const { inventory, itemsByCart, cart_id, reservedInventory, cartsByUser, session_cart_id } = req.app.locals as Context
         const item_by_cart_id = req.body.item_by_cart_id
         const product_id = req.body.product_id
         const qty = req.body.qty
@@ -571,38 +620,37 @@ app.patch('/add-to-cart', async (req, res) => {
         if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
-        const { inventory, itemsByCart, cart_id, reservedInventory, cartsByUser } = req.app.locals as Context
-        if (typeof cart_id !== "string") {
-            throw new Error("Product ID is required and must be a string")
-        }
-        if (cart_id.length !== 24) {
-            throw new Error("Product ID must contain 24 characters")
-        }
+        const cart_oid = new ObjectId(cart_id || session_cart_id)
+        const product_oid = new ObjectId(product_id)
         const reserved = await reservedInventory.findOneAndDelete({
-            cart_id: new ObjectId(cart_id),
-            product_id: new ObjectId(product_id),
+            cart_id: cart_oid,
+            product_id: product_oid,
         })
         if (!reserved.value) {
             throw new Error("Item not reserved.")
         }
         const product = await inventory.findOneAndUpdate({
-            _id: new ObjectId(product_id),
+            _id: product_oid,
             available: {
-                $gte: qty - reserved.value.qty 
+                $gte: qty - reserved.value.qty,
             }
         },
         {
             $inc: {
-                available: reserved.value.qty - qty
+                available: reserved.value.qty - qty,
             },
+        },
+        {
+            returnDocument: "after"
         })
         if (!product.value) {
             throw new Error("Not enough inventory or product not found")
         }
+        const item_by_cart_oid = new ObjectId(item_by_cart_id)
         const result = await itemsByCart.updateOne(
             {
-                _id: new ObjectId(item_by_cart_id),
-                cart_id: new ObjectId(cart_id)
+                _id: item_by_cart_oid,
+                cart_id: cart_oid,
             },
             {
                 $set: {
@@ -620,17 +668,19 @@ app.patch('/add-to-cart', async (req, res) => {
         const newReserved = await reservedInventory.insertOne(
         {
             qty,
-            cart_id: new ObjectId(cart_id),
-            product_id: new ObjectId(product_id),
+            cart_id: cart_oid,
+            product_id: product_oid,
         })
         if (!newReserved.insertedId) {
             throw new Error("Item not reserved.")
         }
         await cartsByUser.updateOne({
-            _id: new ObjectId(cart_id),
+            _id: cart_oid,
         },
         {
-            expireDate
+            $set: {
+                expireDate
+            }
         })
         res.status(200).json("OK!")
     } catch(e) {
@@ -644,14 +694,9 @@ app.patch('/add-to-cart', async (req, res) => {
 
 app.get('/add-to-cart', async (req, res) => {    
     try {
-        const { itemsByCart, cart_id } = req.app.locals as Context
-        if (typeof cart_id !== "string") {
-            throw new Error("Cart ID is required and must be a string")
-        }
-        if (cart_id.length !== 24) {
-            throw new Error("Cart ID must contain 24 characters")
-        }
-        const itemsInCart = await itemsByCart.find({ cart_id: new ObjectId(cart_id) }).toArray()
+        const { itemsByCart, cart_id, session_cart_id } = req.app.locals as Context
+        const cart_oid = new ObjectId(cart_id || session_cart_id)
+        const itemsInCart = await itemsByCart.find({ cart_id: cart_oid }).toArray()
         res.status(200).json(itemsInCart)
     } catch(e) {
         if (e instanceof Error) {
@@ -665,23 +710,19 @@ app.get('/add-to-cart', async (req, res) => {
 app.delete('/add-to-cart', async (req, res) => {
     try {
         const item_by_cart_id = req.body.item_by_cart_id   
-        const { itemsByCart, cart_id, reservedInventory, inventory } = req.app.locals as Context
-        if (typeof cart_id !== "string") {
-            throw new Error("Product ID is required and must be a string")
-        }
-        if (cart_id.length !== 24) {
-            throw new Error("Product ID must contain 24 characters")
-        }
+        const { itemsByCart, cart_id, reservedInventory, inventory, session_cart_id } = req.app.locals as Context
         if (typeof item_by_cart_id !== "string") {
             throw new Error("Product ID is required and must be a string")
         }
         if (item_by_cart_id.length !== 24) {
             throw new Error("Product ID must contain 24 characters")
         }
+        const cart_oid = new ObjectId(cart_id || session_cart_id)
+        const item_by_cart_oid = new ObjectId(item_by_cart_id)
         const result = await itemsByCart.findOneAndDelete(
             {
-                _id: new ObjectId(item_by_cart_id),
-                cart_id: new ObjectId(cart_id)
+                _id: item_by_cart_oid,
+                cart_id: cart_oid
             },
         )
         if (!result.value) {
@@ -690,7 +731,7 @@ app.delete('/add-to-cart', async (req, res) => {
         const reservation = await reservedInventory.findOneAndDelete(
         {
             product_id: result.value.product_id,
-            cart_id: new ObjectId(cart_id)
+            cart_id: cart_oid,
         })
         if (!reservation.value) {
             throw new Error("Item in reservation was not deleted.")
@@ -716,49 +757,300 @@ app.delete('/add-to-cart', async (req, res) => {
     }
 })
 
-/*
-Pagina de carrito (puede modificar el carrito)
-Pagina de checkout (confirma datos de envio y se genera la orden al terminar)
-Pagina de pago (se usa la orden generada para realizar el pago en efectivo, transferencia o tarjeta
-Pagina de confirmacion
-*/
-
 app.post('/checkout', async (req, res) => {
-    const { conekta_id } = req.body
-    const { itemsByCart, cart_id } = req.app.locals as Context
-    if (typeof cart_id !== "string") {
-        throw new Error("ID is required and must be a string")
-    }
-    if (cart_id.length !== 24) {
-        throw new Error("ID must contain 24 characters")
-    }
-    if (typeof cart_id !== "string") {
-        throw new Error("ID is required and must be a string")
-    }
-    const products = await itemsByCart.find({ cart_id: new ObjectId(cart_id) }).toArray()
-    const order = await orderClient.createOrder({
-        currency: "MXN",
-        customer_info: {
-            customer_id: 'cus_2neG7CYEdeda9BBGU'
-        },
-        line_items: products.map(product => ({
-            name: product.name,
-            unit_price: product.price,
-            quantity: product.qty
-        })),
-        checkout: {
-            type: 'Integration',
-            allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
+    try {
+        const { itemsByCart, cart_id, session_cart_id, sessions, session_id, id, users } = req.app.locals as Context
+        const { name, apellidos, street, email, country, colonia, zip, city, state, phone, address_id } = req.body
+        if (typeof name !== "string") {
+            throw new Error("Name is required and must be a string")
         }
-    })
-    res.status(200).json({
-        products
-    })
-});
-
-app.post('/checkout', async (req, res) => {
-
+        if (typeof apellidos !== "string") {
+            throw new Error("Apellidos is required and must be a string")
+        }
+        if (typeof street !== "string") {
+            throw new Error("Street is required and must be a string")
+        }
+        if (typeof country !== "string") {
+            throw new Error("Country is required and must be a string")
+        }
+        if (typeof colonia !== "string") {
+            throw new Error("Colonia is required and must be a string")
+        }
+        if (typeof zip !== "string") {
+            throw new Error("Zip Code is required and must be a string")
+        }
+        if (typeof city !== "string") {
+            throw new Error("City is required and must be a string")
+        }
+        if (typeof state !== "string") {
+            throw new Error("State is required and must be a string")
+        }
+        if (typeof phone !== "string") {
+            throw new Error("Phone is required and must be a string")
+        }
+        const cart_oid = new ObjectId(cart_id || session_cart_id)
+        if (address_id && typeof address_id === "string" && id) {
+            const address_oid = new ObjectId(address_id) 
+            const user_oid = new ObjectId(id)
+            const result = await users.findOneAndUpdate({
+                _id: user_oid,
+                "addresses._id": address_oid,
+            },
+            {
+                $set: {
+                    default_address: address_oid,
+                    "addresses.$.full_address": `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
+                    "addresses.$.country": country,
+                    "addresses.$.street": street,
+                    "addresses.$.colonia": colonia,
+                    "addresses.$.zip": zip,
+                    "addresses.$.city": city,
+                    "addresses.$.state": state,
+                    "addresses.$.phone": phone,
+                    "addresses.$.name": name,
+                    "addresses.$.apellidos": apellidos,
+                },
+            },
+            {
+                returnDocument: "after"
+            })
+            if (!result.value) {
+                throw new Error("No user updated")
+            }
+            const { password, ...user } = result.value
+            const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
+            const order = await orderClient.createOrder({
+                currency: "MXN",
+                customer_info: {
+                    customer_id: result.value.conekta_id,
+                },
+                line_items: products.map(product => ({
+                    name: product.name,
+                    unit_price: product.price,
+                    quantity: product.qty
+                })),
+                checkout: {
+                    type: 'Integration',
+                    allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
+                }
+            })
+            res.status(200).json({
+                ...user,
+                checkout_id: order?.data?.checkout?.id
+            })
+        } else if (id) {
+            const address_id = new ObjectId()
+            const user_oid = new ObjectId(id)
+            const result = await users.findOneAndUpdate({
+                _id: user_oid,
+            },
+            {
+                $set: {
+                    default_address: address_id,
+                },
+                $push: {
+                    addresses: {
+                        _id: address_id,
+                        full_address: `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
+                        country,
+                        street,
+                        colonia,
+                        zip,
+                        city,
+                        state,
+                        phone,
+                        name,
+                        apellidos,
+                    }
+                },
+            },
+            {
+                returnDocument: "after"
+            })
+            if (!result.value) {
+                throw new Error("No user updated")
+            }
+            const { password, ...user } = result.value
+            const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
+            const order = await orderClient.createOrder({
+                currency: "MXN",
+                customer_info: {
+                    customer_id: result.value.conekta_id,
+                },
+                line_items: products.map(product => ({
+                    name: product.name,
+                    unit_price: product.price,
+                    quantity: product.qty
+                })),
+                checkout: {
+                    type: 'Integration',
+                    allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
+                }
+            })
+            res.status(200).json({
+                ...user,
+                checkout_id: order?.data?.checkout?.id
+            })
+        } else if (address_id && typeof address_id === "string") {
+            if (typeof email !== "string") {
+                throw new Error("Email is required and must be a string")
+            }
+            const address_oid = new ObjectId(address_id)
+            const session_oid = new ObjectId(session_id)
+            const result = await sessions.findOneAndUpdate({
+                _id: session_oid,
+                "addresses._id": address_oid,
+            },
+            {
+                $set: {
+                    email,
+                    default_address: address_oid,
+                    "addresses.$.full_address": `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
+                    "addresses.$.country": country,
+                    "addresses.$.street": street,
+                    "addresses.$.colonia": colonia,
+                    "addresses.$.zip": zip,
+                    "addresses.$.city": city,
+                    "addresses.$.state": state,
+                    "addresses.$.phone": phone,
+                    "addresses.$.name": name,
+                    "addresses.$.apellidos": apellidos,
+                },
+            },
+            {
+                returnDocument: "after"
+            })
+            if (!result.value) {
+                throw new Error("No session updated")
+            }
+            const conekta_id = result.value.conekta_id ?? (await customerClient.createCustomer({ phone, name: `${name} ${apellidos}`, email })).data.id
+            if (!result.value.conekta_id) {
+                await sessions.updateOne({
+                    _id: session_oid,
+                },
+                {
+                    $set: {
+                        conekta_id,
+                    }
+                })
+            }
+            const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
+            const order = await orderClient.createOrder({
+                currency: "MXN",
+                customer_info: {
+                    customer_id: conekta_id,
+                },
+                line_items: products.map(product => ({
+                    name: product.name,
+                    unit_price: product.price,
+                    quantity: product.qty
+                })),
+                checkout: {
+                    type: 'Integration',
+                    allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
+                }
+            })
+            res.status(200).json({
+                ...result.value,
+                conekta_id,
+                checkout_id: order?.data?.checkout?.id
+            })
+        } else {
+            if (typeof email !== "string") {
+                throw new Error("Email is required and must be a string")
+            }
+            const address_id = new ObjectId()
+            const session_oid = new ObjectId(session_id)
+            const result = await sessions.findOneAndUpdate({
+                _id: session_oid,
+            },
+            {
+                $set: {
+                    email,
+                    default_address: address_id,
+                },
+                $push: {
+                    addresses: {
+                        _id: address_id,
+                        full_address: `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
+                        country,
+                        street,
+                        colonia,
+                        zip,
+                        city,
+                        state,
+                        phone,
+                        name,
+                        apellidos,
+                    }
+                },
+            },
+            {
+                returnDocument: "after"
+            })
+            if (!result.value) {
+                throw new Error("No session updated")
+            }
+            const conekta_id = result.value.conekta_id ?? (await customerClient.createCustomer({ phone, name: `${name} ${apellidos}`, email })).data.id
+            console.log("pass")
+            if (!result.value.conekta_id) {
+                await sessions.updateOne({
+                    _id: session_oid,
+                },
+                {
+                    $set: {
+                        conekta_id,
+                    }
+                })
+            }
+            const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
+            const order = await orderClient.createOrder({
+                currency: "MXN",
+                customer_info: {
+                    customer_id: conekta_id,
+                },
+                line_items: products.map(product => ({
+                    name: product.name,
+                    unit_price: product.price,
+                    quantity: product.qty
+                })),
+                checkout: {
+                    type: 'Integration',
+                    allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
+                }
+            })
+            res.status(200).json({
+                ...result.value,
+                conekta_id,
+                checkout_id: order?.data?.checkout?.id
+            })
+        }
+    } catch(e) {
+        console.log(e)
+        if (e instanceof Error) {
+            res.status(400).json(e.message)
+        } else {
+            res.status(400).json("Error")
+        }
+    }
 })
+
+app.post('/confirmation', async (req, res) => {
+    const { users, cartsByUser, cart_id, id, session_cart_id, sessions, session_id } = req.app.locals as Context
+    const new_cart_id = new ObjectId()
+    const previous_cart_id = new ObjectId(cart_id || session_cart_id)
+    if (id) {
+        const user_oid = new ObjectId(id)
+        await users.updateOne({ _id: user_oid }, { cart_id: new_cart_id })
+    } else {
+        const session_oid = new ObjectId(session_id)
+        await sessions.updateOne({ _id: session_oid }, { cart_id: new_cart_id })
+    }
+    const user_oid = new ObjectId(id || session_id)
+    await cartsByUser.updateOne({ _id: previous_cart_id }, { expireDate: null })
+    await cartsByUser.insertOne({ _id: new_cart_id, user_id: user_oid, expireDate: null })
+    res.status(200).json("OK")
+});
 
 app.get('*', async (req, res) => {
     try {
@@ -778,23 +1070,46 @@ app.get('*', async (req, res) => {
 //Payment
 //Confirmation
 //Historial
+//Better State Management?
+//Web Component for Header
+//Create Fetch wrapper
+//Update pages on demand
+//Promotions?
+//Cron job?
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
-    fs.readFile('templates/product.html', 'utf8', async (err, product) => {
+    fs.readFile('templates/product.html', 'utf8', async (err, html) => {
         if (err) throw err;
         const products = await db.collection("inventory").find().toArray()
         products.forEach(item => {
-            const template = Handlebars.compile(product);
+            const template = Handlebars.compile(html);
             const result = template(item);
             fs.writeFileSync(`static/product-${item._id}.html`, result)
         })
+    });
+    fs.readFile('templates/main.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/main.html`, html)
+    });
+    fs.readFile('templates/cart.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/cart.html`, html)
+    });
+    fs.readFile('templates/checkout.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/checkout.html`, html)
+    });
+    fs.readFile('templates/payment.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/payment.html`, html)
     });
     app.locals.users = db.collection("users")
     app.locals.cartsByUser = db.collection("carts_by_user")
     app.locals.inventory = db.collection("inventory")
     app.locals.itemsByCart = db.collection("items_by_cart")
     app.locals.reservedInventory = db.collection("reserved_inventory")
+    app.locals.sessions = db.collection("sessions")
     app.listen(8000)
 })
 

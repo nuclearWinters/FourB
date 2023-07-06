@@ -2,103 +2,78 @@
 <html lang="en">
   <head>
   </head>
-  <script
-      type="module"
-      crossorigin
-      src="https://assets.conekta.com/component/2.0.2/assets/component.min.js"
-    ></script>
-    <script type="module" crossorigin defer>
-      fetch('http://localhost:8000/add-to-cart')
-        .then(response => response.json())
-        .then(json => {
-          const config = {
-            checkoutRequestId: '00000000-0000-0000-0000-000000000', //Checkout ID enviado desde el servidor para inicializar el componente de pago.
-            publicKey: 'key_Adnb8659Bfsg5bM0cKe2wZy',
-            targetIFrame: 'example',
-          };
-          const callbacks = {
-            onFinalizePayment: (event) => console.log(event),
-            onErrorPayment: (event) => console.log(event),
-            onGetInfoSuccess: (event) => console.log(event),
-          };
-          window.ConektaCheckoutComponents.Integration({ config, callbacks });
-        })
-    </script>
   <body>
     <script>
-        fetch('http://localhost:8000/add-to-cart')
-        .then(response => response.json())
-        .then(json => {
-          const list = document.querySelector('#products')
-          json.forEach((product, idx) => {
-            const projectEl = document.createElement('div')
-            projectEl.id = `${idx}-product`
-            const name = document.createElement('div')
-            name.textContent = product.name
-            const price = document.createElement('div')
-            price.textContent = product.price
-            projectEl.appendChild(name)
-            projectEl.appendChild(price)
-            const input = document.createElement('input')
-            input.type = "number"
-            input.id = `${idx}-quantity`
-            input.value = product.qty
-            input.min = "1"
-            projectEl.appendChild(input)
-            const viewButton = document.createElement('button')
-            viewButton.onclick = () => {
-              window.location.href = `/product-${product._id}`;
+      fetch('http://localhost:8000/add-to-cart')
+      .then(response => response.json())
+      .then(json => {
+        const list = document.querySelector('#products')
+        json.forEach((product, idx) => {
+          const projectEl = document.createElement('div')
+          projectEl.id = `${idx}-product`
+          const name = document.createElement('div')
+          name.textContent = product.name
+          const price = document.createElement('div')
+          price.textContent = product.price
+          projectEl.appendChild(name)
+          projectEl.appendChild(price)
+          const quantity = document.createElement('div')
+          quantity.innerText = product.qty
+          projectEl.appendChild(quantity)
+          const viewButton = document.createElement('button')
+          viewButton.onclick = () => {
+            window.location.href = `/product-${product._id}`;
+          }
+          viewButton.textContent = "VIEW"
+          projectEl.appendChild(viewButton)
+          list.appendChild(projectEl)
+        })
+      });
+      const checkoutSubmit = async (e, form) => {
+        console.log(form)
+        e.preventDefault();
+        try {
+          const response = await fetch("http://localhost:8000/checkout", {
+            method: 'POST',
+            body: JSON.stringify({
+              name: form.name.value,
+              apellidos: form.apellidos.value,
+              street: form.street.value,
+              country: form.country.value,
+              colonia: form.colonia.value,
+              zip: form.zip.value,
+              city: form.city.value,
+              state: form.state.value,
+              phone: form.phone.value,
+              email: form?.email?.value,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+              authorization: sessionStorage.getItem("accessToken"),
             }
-            viewButton.textContent = "VIEW"
-            projectEl.appendChild(viewButton)
-            const buyButton = document.createElement('button')
-            buyButton.onclick = async () => {
-              const input = document.getElementById(`${idx}-quantity`)
-              const response = await fetch('http://localhost:8000/add-to-cart', {
-                method: "PATCH",
-                headers: {
-                  authorization: sessionStorage.getItem("accessToken"),
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  item_by_cart_id: product._id,
-                  product_id: product.product_id,
-                  qty: Number(input.value)
-                })
-              })
-              const data = await response.json()
-              if (response.status === 200) {
-                alert("Item in cart updated")
-              }
-            }
-            buyButton.textContent = "UPDATE ITEM"
-            projectEl.appendChild(buyButton)
-            const deleteButton = document.createElement('button')
-            deleteButton.onclick = async () => {
-              const response = await fetch('http://localhost:8000/add-to-cart', {
-                method: "DELETE",
-                headers: {
-                  authorization: sessionStorage.getItem("accessToken"),
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  item_by_cart_id: product._id,
-                })
-              })
-              const data = await response.json()
-              if (response.status === 200) {
-                const product = document.getElementById(`${idx}-product`)
-                product.remove()
-                alert("Item removed")
-              }
-            }
-            deleteButton.textContent = "REMOVE ITEM"
-            projectEl.appendChild(deleteButton)
-            list.appendChild(projectEl)
           })
-        });
-      const pay = () => {
-        window.location.href = "/payment"
+          if (response.headers.accessToken) {
+            sessionStorage("accessToken", response.headers.accessToken)
+          }
+          const data = await response.json();
+          if (response.status !== 200) {
+            throw new Error(data)
+          }
+          if (data._id && data.cart_id) {
+            sessionStorage.setItem("user_id", data._id)
+            sessionStorage.setItem("cart_id", data.cart_id)
+          }
+          if (data.checkout_id) {
+            localStorage.setItem("checkout_id", data.checkout_id)
+          }
+          window.location.href = "/payment"
+        } catch(e) {
+          if (e instanceof Error) {
+            alert(e.message)
+          } else {
+            alert("Error")
+          }
+        }
       }
     </script>
     <button>Cart</button>
@@ -106,6 +81,40 @@
       Products in cart
     </p>
     <div id="products"></div>
-    <button onclick="pay()">Pagar</button>
+    <form action="http://localhost:8000/checkout" method="POST" id="checkout" onsubmit="checkoutSubmit(event, this)">
+      <label for="name">Name</label>
+      <input name="name" type="text" />
+      <label for="apellidos">Apellidos</label>
+      <input name="apellidos" type="text" />
+      <label for="street">Dirección</label>
+      <input name="street" type="text" />
+      <label for="country">Pais</label>
+      <input name="country" type="text" />
+      <label for="colonia">Colonia</label>
+      <input name="colonia" type="text" />
+      <label for="zip">Código Postal</label>
+      <input name="zip" type="text" />
+      <label for="city">Ciudad</label>
+      <input name="city" type="text" />
+      <label for="state">Estado</label>
+      <input name="state" type="text" />
+      <label for="phone">Telefono</label>
+      <input name="phone" type="text" />
+      <button type="submit">Pagar</button>
+    </form>
+    <script>
+      const accessToken = localStorage.getItem("accessToken")
+      if (!accessToken) {
+        const form = document.querySelector('#checkout')
+        const input = document.createElement('input')
+        input.type = "text"
+        input.name = "email"
+        const label = document.createElement('label')
+        label.for = "email"
+        label.innerText = "Email"
+        form.prepend(input)
+        form.prepend(label)
+      }
+    </script>
   </body>
 </html>
