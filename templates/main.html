@@ -26,20 +26,6 @@
   <body>
     <script type="module">
       import { fetchWrapper } from "./main.js"
-      if (!sessionStorage.getItem("user_id")) {
-        fetch("http://localhost:8000/user", {
-          headers: {
-            authorization: sessionStorage.getItem("accessToken")
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data._id && data.cart_id) {
-              sessionStorage.setItem("user_id", data._id)
-              sessionStorage.setItem("cart_id", data.cart_id)
-            }
-          })
-      }
       fetch('http://localhost:8000/inventory')
         .then(response => response.json())
         .then(json => {

@@ -6,6 +6,18 @@ export const fetchWrapper = async (input = "", init = {}) => {
         },
         ...init
     })
+    const accessToken = response.headers.get("accessToken")
+    if (accessToken) {
+      const payload = accessToken.split(".")[1]
+      sessionStorage.setItem("accessToken", payload)
+      const data = atob(payload)
+      const token = JSON.parse(data)
+      sessionStorage.setItem("refreshTokenExpireTime", token.refreshTokenExpireTime)
+    } else {
+      sessionStorage.removeItem("accessToken")
+      sessionStorage.removeItem("refreshTokenExpireTime")
+      sessionStorage.removeItem("user")
+    }
     const data = await response.json()
     if (response.status !== 200) {
         throw new Error(data)
@@ -16,7 +28,7 @@ export const fetchWrapper = async (input = "", init = {}) => {
 class Header extends HTMLElement {
     constructor() {
         super()
-        this.innerHTML = `<div>
+        this.innerHTML = `<div style="background: black; height: 80px;">
             <button id="go-to-cart">Cart</button>
             <button id="show-log-in">Log in</button>
             <button id="show-register">Register</button>
@@ -46,6 +58,27 @@ class Header extends HTMLElement {
     }
 
     connectedCallback() {
+      const getUser = async () => {
+        const refreshTokenExpireTime = sessionStorage.getItem("refreshTokenExpireTime")
+        if (refreshTokenExpireTime) {
+          const numberRefreshTokenExpiration = Number(refreshTokenExpireTime)
+          const now = new Date()
+          now.setMilliseconds(0)
+          const nowSeconds = now / 1000
+          if (nowSeconds > numberRefreshTokenExpiration) {
+            return
+          }
+          const data = await fetchWrapper("http://localhost:8000/user")
+          sessionStorage.setItem("user", JSON.stringify(data))
+        } else {
+          const session = sessionStorage.getItem("session")
+          if (!session) {
+            const data = await fetchWrapper("http://localhost:8000/user")
+            sessionStorage.setItem("session", JSON.stringify(data))
+          }
+        }
+      }
+      getUser()
       const goToCart = document.getElementById("go-to-cart")
       if (goToCart) {
           goToCart.onclick = () => {
@@ -56,24 +89,10 @@ class Header extends HTMLElement {
         const form = document.getElementById("form-log-in")
         e.preventDefault();
         try {
-          const response = await fetch("http://localhost:8000/log-in", {
+          await fetchWrapper("http://localhost:8000/log-in", {
             method: 'POST',
             body: JSON.stringify({ email: form.email.value, password: form.password.value}),
-            headers: {
-              "Content-Type": "application/json"
-            }
           })
-          if (response.headers.accessToken) {
-            sessionStorage("accessToken", response.headers.accessToken)
-          }
-          const data = await response.json();
-          if (response.status !== 200) {
-            throw new Error(data)
-          }
-          if (data._id && data.cart_id) {
-            sessionStorage.setItem("user_id", data._id)
-            sessionStorage.setItem("cart_id", data.cart_id)
-          }
         } catch(e) {
           if (e instanceof Error) {
             alert(e.message)
@@ -90,24 +109,10 @@ class Header extends HTMLElement {
         const form = document.getElementById("form-register")
         e.preventDefault();
         try {
-          const response = await fetch("http://localhost:8000/register", {
+          await fetchWrapper("http://localhost:8000/register", {
             method: 'POST',
             body: JSON.stringify({ email: form.email.value, password: form.password.value}),
-            headers: {
-              "Content-Type": "application/json"
-            }
           })
-          if (response.headers.accessToken) {
-            sessionStorage("accessToken", response.headers.accessToken)
-          }
-          const data = await response.json();
-          if (response.status !== 200) {
-            throw new Error(data)
-          }
-          if (data._id && data.cart_id) {
-            sessionStorage.setItem("user_id", data._id)
-            sessionStorage.setItem("cart_id", data.cart_id)
-          }
         } catch(e) {
           if (e instanceof Error) {
             alert(e.message)
