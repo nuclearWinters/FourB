@@ -21,6 +21,7 @@
             try {
               localStorage.removeItem("checkout_id")
               const response = await fetch('http://localhost:8000/confirmation', {
+                method: "POST",
                 credentials: "include",
                 headers: {
                   "Content-Type": "application/json",

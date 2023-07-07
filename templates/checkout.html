@@ -30,7 +30,6 @@
         })
       });
       const checkoutSubmit = async (e, form) => {
-        console.log(form)
         e.preventDefault();
         try {
           const response = await fetch("http://localhost:8000/checkout", {

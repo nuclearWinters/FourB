@@ -234,13 +234,13 @@ app.post('/inventory', async (req, res) => {
         const qty = req.body.qty
         const name = req.body.name
         const price = req.body.price
-        if (typeof qty !== "number") {
+        if (qty && typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
-        if (typeof price !== "number") {
+        if (price && typeof price !== "number") {
             throw new Error("Price is required and must be a number")
         }
-        if (typeof name !== "string") {
+        if (name && typeof name !== "string") {
             throw new Error("Name is required and must be a string")
         }
         const { inventory } = req.app.locals as Context
@@ -266,7 +266,7 @@ app.patch('/inventory', async (req, res) => {
         const increment = req.body.increment
         const name = req.body.name
         const price = req.body.price
-        if (typeof id !== "string") {
+        if (id && typeof id !== "string") {
             throw new Error("ID is required and must be a string")
         }
         if (id.length !== 24) {
@@ -319,7 +319,7 @@ app.patch('/inventory', async (req, res) => {
 app.get('/user', async (req, res) => {
     try {
         const { id } = req.app.locals as Context
-        if (typeof id !== "string") {
+        if (!id) {
             throw new Error("ID is required and must be a string")
         }
         if (id.length !== 24) {
@@ -351,22 +351,22 @@ app.post('/register', async (req, res) => {
         const name = req.body.name
         const apellidos = req.body.apellidos
         const phone = req.body.phone
-        if (typeof email !== "string") {
+        if (email && typeof email !== "string") {
             throw new Error("Email is required and must be a string")
         }
-        if (typeof password !== "string") {
+        if (password && typeof password !== "string") {
             throw new Error("Password is required and must be a string")
         }
         if (password.length < 8) {
             throw new Error("Password must have at least 8 characters")
         }
-        if (typeof name !== "string") {
+        if (name && typeof name !== "string") {
             throw new Error("Password is required and must be a string")
         }
-        if (typeof apellidos !== "string") {
+        if (apellidos && typeof apellidos !== "string") {
             throw new Error("Password is required and must be a string")
         }
-        if (typeof phone !== "string") {
+        if (phone && typeof phone !== "string") {
             throw new Error("Password is required and must be a string")
         }
         const { users, cartsByUser } = req.app.locals as Context
@@ -444,10 +444,10 @@ app.post('/log-in', async (req, res) => {
     try {
         const email = req.body.email
         const password = req.body.password
-        if (typeof email !== "string") {
+        if (email && typeof email !== "string") {
             throw new Error("Email is required and must be a string")
         }
-        if (typeof password !== "string") {
+        if (password && typeof password !== "string") {
             throw new Error("Password is required and must be a string")
         }
         if (password.length < 8) {
@@ -508,13 +508,13 @@ app.post('/add-to-cart', async (req, res) => {
         const { inventory, itemsByCart, cart_id, reservedInventory, cartsByUser, session_cart_id } = req.app.locals as Context
         const product_id = req.body.product_id
         const qty = req.body.qty
-        if (typeof product_id !== "string") {
+        if (product_id && typeof product_id !== "string") {
             throw new Error("Product ID is required and must be a string")
         }
         if (product_id.length !== 24) {
             throw new Error("Product ID must contain 24 characters")
         }
-        if (typeof qty !== "number") {
+        if (qty && typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
         const cart_oid = new ObjectId(cart_id || session_cart_id)
@@ -605,19 +605,19 @@ app.patch('/add-to-cart', async (req, res) => {
         const item_by_cart_id = req.body.item_by_cart_id
         const product_id = req.body.product_id
         const qty = req.body.qty
-        if (typeof product_id !== "string") {
+        if (product_id && typeof product_id !== "string") {
             throw new Error("Product ID is required and must be a string")
         }
         if (product_id.length !== 24) {
             throw new Error("Product ID must contain 24 characters")
         }
-        if (typeof item_by_cart_id !== "string") {
+        if (item_by_cart_id && typeof item_by_cart_id !== "string") {
             throw new Error("Product cart ID is required and must be a string")
         }
         if (item_by_cart_id.length !== 24) {
             throw new Error("Product cart ID must contain 24 characters")
         }
-        if (typeof qty !== "number") {
+        if (qty && typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
         const cart_oid = new ObjectId(cart_id || session_cart_id)
@@ -711,7 +711,7 @@ app.delete('/add-to-cart', async (req, res) => {
     try {
         const item_by_cart_id = req.body.item_by_cart_id   
         const { itemsByCart, cart_id, reservedInventory, inventory, session_cart_id } = req.app.locals as Context
-        if (typeof item_by_cart_id !== "string") {
+        if (item_by_cart_id && typeof item_by_cart_id !== "string") {
             throw new Error("Product ID is required and must be a string")
         }
         if (item_by_cart_id.length !== 24) {
@@ -761,31 +761,31 @@ app.post('/checkout', async (req, res) => {
     try {
         const { itemsByCart, cart_id, session_cart_id, sessions, session_id, id, users } = req.app.locals as Context
         const { name, apellidos, street, email, country, colonia, zip, city, state, phone, address_id } = req.body
-        if (typeof name !== "string") {
+        if (name && typeof name !== "string") {
             throw new Error("Name is required and must be a string")
         }
-        if (typeof apellidos !== "string") {
+        if (apellidos && typeof apellidos !== "string") {
             throw new Error("Apellidos is required and must be a string")
         }
-        if (typeof street !== "string") {
+        if (street && typeof street !== "string") {
             throw new Error("Street is required and must be a string")
         }
-        if (typeof country !== "string") {
+        if (country && typeof country !== "string") {
             throw new Error("Country is required and must be a string")
         }
-        if (typeof colonia !== "string") {
+        if (colonia && typeof colonia !== "string") {
             throw new Error("Colonia is required and must be a string")
         }
-        if (typeof zip !== "string") {
+        if (zip && typeof zip !== "string") {
             throw new Error("Zip Code is required and must be a string")
         }
-        if (typeof city !== "string") {
+        if (city && typeof city !== "string") {
             throw new Error("City is required and must be a string")
         }
-        if (typeof state !== "string") {
+        if (state && typeof state !== "string") {
             throw new Error("State is required and must be a string")
         }
-        if (typeof phone !== "string") {
+        if (phone && typeof phone !== "string") {
             throw new Error("Phone is required and must be a string")
         }
         const cart_oid = new ObjectId(cart_id || session_cart_id)
@@ -892,7 +892,7 @@ app.post('/checkout', async (req, res) => {
                 checkout_id: order?.data?.checkout?.id
             })
         } else if (address_id && typeof address_id === "string") {
-            if (typeof email !== "string") {
+            if (email && typeof email !== "string") {
                 throw new Error("Email is required and must be a string")
             }
             const address_oid = new ObjectId(address_id)
@@ -956,7 +956,7 @@ app.post('/checkout', async (req, res) => {
                 checkout_id: order?.data?.checkout?.id
             })
         } else {
-            if (typeof email !== "string") {
+            if (email && typeof email !== "string") {
                 throw new Error("Email is required and must be a string")
             }
             const address_id = new ObjectId()
@@ -992,7 +992,6 @@ app.post('/checkout', async (req, res) => {
                 throw new Error("No session updated")
             }
             const conekta_id = result.value.conekta_id ?? (await customerClient.createCustomer({ phone, name: `${name} ${apellidos}`, email })).data.id
-            console.log("pass")
             if (!result.value.conekta_id) {
                 await sessions.updateOne({
                     _id: session_oid,
@@ -1026,7 +1025,6 @@ app.post('/checkout', async (req, res) => {
             })
         }
     } catch(e) {
-        console.log(e)
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -1036,24 +1034,59 @@ app.post('/checkout', async (req, res) => {
 })
 
 app.post('/confirmation', async (req, res) => {
-    const { users, cartsByUser, cart_id, id, session_cart_id, sessions, session_id } = req.app.locals as Context
-    const new_cart_id = new ObjectId()
-    const previous_cart_id = new ObjectId(cart_id || session_cart_id)
-    if (id) {
-        const user_oid = new ObjectId(id)
-        await users.updateOne({ _id: user_oid }, { cart_id: new_cart_id })
-    } else {
-        const session_oid = new ObjectId(session_id)
-        await sessions.updateOne({ _id: session_oid }, { cart_id: new_cart_id })
+    try {
+        const { users, cartsByUser, cart_id, id, session_cart_id, sessions, session_id } = req.app.locals as Context
+        const new_cart_id = new ObjectId()
+        res.cookie("cart_id", new_cart_id.toHexString())
+        const previous_cart_id = new ObjectId(cart_id || session_cart_id)
+        if (id) {
+            const user_oid = new ObjectId(id)
+            await users.updateOne({
+                _id: user_oid
+            }, {
+                $set: {
+                    cart_id: new_cart_id
+                }
+            })
+        } else {
+            const session_oid = new ObjectId(session_id)
+            await sessions.updateOne({
+                _id: session_oid
+            }, {
+                $set: {
+                    cart_id: new_cart_id
+                }
+            })
+        }
+        const user_oid = new ObjectId(id || session_id)
+        await cartsByUser.updateOne({
+            _id: previous_cart_id
+        }, {
+            $set: {
+                expireDate: null
+            }
+        })
+        await cartsByUser.insertOne({
+            _id: new_cart_id,
+            user_id: user_oid,
+            expireDate: null
+        })
+        res.status(200).json("OK")
+    } catch(e) {
+        if (e instanceof Error) {
+            res.status(400).json(e.message)
+        } else {
+            res.status(400).json("Error")
+        }
     }
-    const user_oid = new ObjectId(id || session_id)
-    await cartsByUser.updateOne({ _id: previous_cart_id }, { expireDate: null })
-    await cartsByUser.insertOne({ _id: new_cart_id, user_id: user_oid, expireDate: null })
-    res.status(200).json("OK")
 });
 
 app.get('*', async (req, res) => {
     try {
+        if (req.path.includes(".js")) {
+            const template = fs.readFileSync(`static/${req.path}`, 'utf-8');
+            return res.status(200).set({ 'Content-Type': 'application/javascript' }).end(template);
+        }
         const template = fs.readFileSync(`static/${req.path}.html`, 'utf-8');
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
     } catch {
@@ -1103,6 +1136,10 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     fs.readFile('templates/payment.html', 'utf8', async (err, html) => {
         if (err) throw err;
         fs.writeFileSync(`static/payment.html`, html)
+    });
+    fs.readFile('templates/main.js', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/main.js`, html)
     });
     app.locals.users = db.collection("users")
     app.locals.cartsByUser = db.collection("carts_by_user")

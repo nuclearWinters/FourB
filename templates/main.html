@@ -22,8 +22,10 @@
       }
     </style>
   </head>
+  <script type="module" src="main.js"></script>
   <body>
-    <script>
+    <script type="module">
+      import { fetchWrapper } from "./main.js"
       if (!sessionStorage.getItem("user_id")) {
         fetch("http://localhost:8000/user", {
           headers: {
@@ -82,122 +84,9 @@
             list.appendChild(projectEl)
           })
         });
-      const logInSubmit = async (e, form) => {
-        e.preventDefault();
-        try {
-          const response = await fetch("http://localhost:8000/log-in", {
-            method: 'POST',
-            body: JSON.stringify({ email: form.email.value, password: form.password.value}),
-            headers: {
-              "Content-Type": "application/json"
-            }
-          })
-          if (response.headers.accessToken) {
-            sessionStorage("accessToken", response.headers.accessToken)
-          }
-          const data = await response.json();
-          if (response.status !== 200) {
-            throw new Error(data)
-          }
-          if (data._id && data.cart_id) {
-            sessionStorage.setItem("user_id", data._id)
-            sessionStorage.setItem("cart_id", data.cart_id)
-          }
-        } catch(e) {
-          if (e instanceof Error) {
-            alert(e.message)
-          } else {
-            alert("Error")
-          }
-        }
-      }
-      const registerSubmit = async (e, form) => {
-        e.preventDefault();
-        try {
-          const response = await fetch("http://localhost:8000/register", {
-            method: 'POST',
-            body: JSON.stringify({ email: form.email.value, password: form.password.value}),
-            headers: {
-              "Content-Type": "application/json"
-            }
-          })
-          if (response.headers.accessToken) {
-            sessionStorage("accessToken", response.headers.accessToken)
-          }
-          const data = await response.json();
-          if (response.status !== 200) {
-            throw new Error(data)
-          }
-          if (data._id && data.cart_id) {
-            sessionStorage.setItem("user_id", data._id)
-            sessionStorage.setItem("cart_id", data.cart_id)
-          }
-        } catch(e) {
-          if (e instanceof Error) {
-            alert(e.message)
-          } else {
-            alert("Error")
-          }
-        }
-      }
-      const goToCart = () => {
-        window.location.href = "/cart"
-      }
     </script>
-    <button onclick="goToCart()">Cart</button>
-    <button id="show-log-in">Log in</button>
-    <button id="show-register">Register</button>
-    <div id="register-modal" class="auth-modal" style="display: none;">
-      <form action="http://localhost:8000/register" class="auth-form" method="POST" id="form-register" onsubmit="registerSubmit(event, this)">
-        <span id="close-register" class="close">x</span>
-        <div>Register</div>
-        <label for="email">Email</label>
-        <input type="text" name="email" required />
-        <label for="password">Password</label>
-        <input type="password" name="password" required />
-        <button type="submit">Register</button>
-      </form>
-    </div>
-    <div id="log-in-modal" class="auth-modal" style="display: none;">
-      <form action="http://localhost:8000/log-in"class="auth-form" method="POST" id="form-log-in" onsubmit="logInSubmit(event, this)">
-        <span id="close-log-in" class="close">x</span>
-        <div>Log in</div>
-        <label for="email">Email</label>
-        <input type="text" name="email" required />
-        <label for="password">Password</label>
-        <input type="password" name="password" required />
-        <button type="submit">Log In</button>
-      </form>
-    </div>
+    <fourb-header></fourb-header>
     <div>Products</div>
     <div id="products"></div>
-    <script>
-      const logInModal = document.getElementById("log-in-modal");
-      const showLogIn = document.getElementById("show-log-in");
-      const closeLogIn = document.getElementById("close-log-in");
-      showLogIn.onclick = () => {
-        logInModal.style.display = "flex";
-      }
-      closeLogIn.onclick = () => {
-        logInModal.style.display = "none";
-      }
-      window.onclick = (event) => {
-        if (event.target == logInModal) {
-          logInModal.style.display = "none";
-        }
-        if (event.target == registerModal) {
-          registerModal.style.display = "none";
-        }
-      }
-      const registerModal = document.getElementById("register-modal");
-      const showRegister = document.getElementById("show-register");
-      const closeRegister = document.getElementById("close-register");
-      showRegister.onclick = () => {
-        registerModal.style.display = "flex";
-      }
-      closeRegister.onclick = () => {
-        registerModal.style.display = "none";
-      }
-    </script>
   </body>
 </html>
