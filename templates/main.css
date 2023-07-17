@@ -1,0 +1,34 @@
+
+.auth-modal {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.1);
+}
+.auth-form {
+  width: 80%;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+.header-button {
+  color: white;
+  background: black;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+.header{
+  background: black;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+}

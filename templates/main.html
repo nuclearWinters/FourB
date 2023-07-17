@@ -1,33 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <style>
-      .auth-modal {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0,0,0,0.1);
-      }
-      .auth-form {
-        width: 80%;
-        height: 80%;
-        display: flex;
-        flex-direction: column;
-        background: white;
-      }
-    </style>
+    <link rel="stylesheet" href="main.css">
   </head>
   <script type="module" src="main.js"></script>
   <body>
     <script type="module">
       import { fetchWrapper } from "./main.js"
-      fetch('http://localhost:8000/inventory')
-        .then(response => response.json())
+      fetchWrapper('http://localhost:8000/inventory')
         .then(json => {
           const list = document.querySelector('#products')
           json.forEach(product => {

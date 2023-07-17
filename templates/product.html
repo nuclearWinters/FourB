@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <link rel="stylesheet" href="main.css">
   </head>
+  <script type="module" src="main.js"></script>
   <body>
     <script>
       const addToCart = async () => {
@@ -21,11 +23,8 @@
           alert("Added to cart")
         }
       }
-      const goToCart = () => {
-        window.location.href = "/cart"
-      }
     </script>
-    <button onclick="goToCart()">Cart</button>
+    <fourb-header></fourb-header>
     <p>
       {{name}}
     </p>

@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <link rel="stylesheet" href="main.css">
   </head>
+  <script type="module" src="main.js"></script>
   <body>
     <script>
         fetch('http://localhost:8000/add-to-cart')
@@ -79,7 +81,7 @@
         window.location.href = "/checkout"
       }
     </script>
-    <button>Cart</button>
+    <fourb-header></fourb-header>
     <p>
       Products in cart
     </p>

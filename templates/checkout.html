@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <link rel="stylesheet" href="main.css">
   </head>
+  <script type="module" src="main.js"></script>
   <body>
-    <script>
-      fetch('http://localhost:8000/add-to-cart')
-      .then(response => response.json())
+    <script type="module">
+      import { fetchWrapper } from "./main.js"
+      fetchWrapper('http://localhost:8000/add-to-cart')
       .then(json => {
         const list = document.querySelector('#products')
         json.forEach((product, idx) => {
@@ -29,10 +31,122 @@
           list.appendChild(projectEl)
         })
       });
-      const checkoutSubmit = async (e, form) => {
+    </script>
+    <fourb-header></fourb-header>
+    <p>
+      Products in cart
+    </p>
+    <div id="products"></div>
+    <form action="http://localhost:8000/checkout" method="POST" id="checkout">
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" />
+      <label for="apellidos">Apellidos</label>
+      <input id="apellidos" name="apellidos" type="text" />
+      <label for="street">Dirección</label>
+      <input id="street" name="street" type="text" />
+      <label for="country">Pais</label>
+      <input id="country" name="country" type="text" />
+      <label for="colonia">Colonia</label>
+      <input id="colonia" name="colonia" type="text" />
+      <label for="zip">Código Postal</label>
+      <input id="zip" name="zip" type="text" />
+      <label for="city">Ciudad</label>
+      <input id="city" name="city" type="text" />
+      <label for="state">Estado</label>
+      <input id="state" name="state" type="text" />
+      <label for="phone">Telefono</label>
+      <input id="phone" name="phone" type="text" />
+      <button type="submit">Pagar</button>
+    </form>
+    <script type="module">
+      import { getCookie, fetchWrapper } from "./main.js"
+      const accessToken = localStorage.getItem("accessToken")
+      if (!accessToken) {
+        const form = document.querySelector('#checkout')
+        const input = document.createElement('input')
+        input.type = "text"
+        input.name = "email"
+        input.id = "email"
+        const label = document.createElement('label')
+        label.for = "email"
+        label.innerText = "Email"
+        form.prepend(input)
+        form.prepend(label)
+      }
+      const session = getCookie("session")
+      const user = sessionStorage.getItem("user")
+      if (user) {
+        const parsed = JSON.parse(user)
+        if (parsed) {
+          console.log("parsed:", parsed)
+          if (parsed.addresses && parsed.default_address) {
+            const address = parsed.addresse.find(address => parsed.default_address === address._id)
+            if (address) {
+              const form = document.querySelector('#checkout')
+              const select = document.createElement('select')
+              parsed.addresses.forEach((address) => {
+                const option = document.createElement('option')
+                option.value = address._id
+                option.innerText = address.full_address
+                select.appendChild(option)
+              })
+              select.name = "address_id"
+              select.id = "address_id"
+              form.prepend(select)
+              const email = document.getElementById('email')
+              email.value = parsed.email
+              const name = document.getElementById('name')
+              name.value = address.name
+              const apellidos = document.getElementById('apellidos')
+              apellidos.value = address.apellidos
+              const street = document.getElementById('street')
+              street.value = address.street
+              const country = document.getElementById('country')
+              country.value = address.country
+              const state = document.getElementById('state')
+              state.value = address.state
+              const zip = document.getElementById('zip')
+              zip.value = address.zip
+              const city = document.getElementById('city')
+              city.value = address.city
+              const phone = document.getElementById('phone')
+              phone.value = address.phone
+              const colonia = document.getElementById('colonia')
+              colonia.value = address.colonia
+            }
+          }
+        }
+      } else if (session) {
+        const parsed = JSON.parse(session)
+        if (parsed) {
+          const form = document.querySelector('#checkout')
+          const email = document.getElementById('email')
+          email.value = parsed.email
+          const name = document.getElementById('name')
+          name.value = parsed.name
+          const apellidos = document.getElementById('apellidos')
+          apellidos.value = parsed.apellidos
+          const street = document.getElementById('street')
+          street.value = parsed.street
+          const country = document.getElementById('country')
+          country.value = parsed.country
+          const state = document.getElementById('state')
+          state.value = parsed.state
+          const zip = document.getElementById('zip')
+          zip.value = parsed.zip
+          const city = document.getElementById('city')
+          city.value = parsed.city
+          const phone = document.getElementById('phone')
+          phone.value = parsed.phone
+          const colonia = document.getElementById('colonia')
+          colonia.value = parsed.colonia
+        }
+      }
+      const form = document.getElementById('checkout')
+      const checkoutSubmit = async (e) => {
         e.preventDefault();
         try {
-          const response = await fetch("http://localhost:8000/checkout", {
+          const data = await fetchWrapper("http://localhost:8000/checkout", {
             method: 'POST',
             body: JSON.stringify({
               name: form.name.value,
@@ -44,24 +158,10 @@
               city: form.city.value,
               state: form.state.value,
               phone: form.phone.value,
-              email: form?.email?.value,
+              email: form.email.value,
+              address_id: form?.address_id?.value,
             }),
-            headers: {
-              "Content-Type": "application/json",
-              authorization: sessionStorage.getItem("accessToken"),
-            }
           })
-          if (response.headers.accessToken) {
-            sessionStorage("accessToken", response.headers.accessToken)
-          }
-          const data = await response.json();
-          if (response.status !== 200) {
-            throw new Error(data)
-          }
-          if (data._id && data.cart_id) {
-            sessionStorage.setItem("user_id", data._id)
-            sessionStorage.setItem("cart_id", data.cart_id)
-          }
           if (data.checkout_id) {
             localStorage.setItem("checkout_id", data.checkout_id)
           }
@@ -74,46 +174,7 @@
           }
         }
       }
-    </script>
-    <button>Cart</button>
-    <p>
-      Products in cart
-    </p>
-    <div id="products"></div>
-    <form action="http://localhost:8000/checkout" method="POST" id="checkout" onsubmit="checkoutSubmit(event, this)">
-      <label for="name">Name</label>
-      <input name="name" type="text" />
-      <label for="apellidos">Apellidos</label>
-      <input name="apellidos" type="text" />
-      <label for="street">Dirección</label>
-      <input name="street" type="text" />
-      <label for="country">Pais</label>
-      <input name="country" type="text" />
-      <label for="colonia">Colonia</label>
-      <input name="colonia" type="text" />
-      <label for="zip">Código Postal</label>
-      <input name="zip" type="text" />
-      <label for="city">Ciudad</label>
-      <input name="city" type="text" />
-      <label for="state">Estado</label>
-      <input name="state" type="text" />
-      <label for="phone">Telefono</label>
-      <input name="phone" type="text" />
-      <button type="submit">Pagar</button>
-    </form>
-    <script>
-      const accessToken = localStorage.getItem("accessToken")
-      if (!accessToken) {
-        const form = document.querySelector('#checkout')
-        const input = document.createElement('input')
-        input.type = "text"
-        input.name = "email"
-        const label = document.createElement('label')
-        label.for = "email"
-        label.innerText = "Email"
-        form.prepend(input)
-        form.prepend(label)
-      }
+      form.addEventListener("submit", checkoutSubmit)
     </script>
   </body>
 </html>
