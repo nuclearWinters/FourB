@@ -16,7 +16,7 @@
           const name = document.createElement('div')
           name.textContent = product.name
           const price = document.createElement('div')
-          price.textContent = product.price
+          price.textContent = (product.price / 100).toFixed(2)
           projectEl.appendChild(name)
           projectEl.appendChild(price)
           const quantity = document.createElement('div')
@@ -134,7 +134,6 @@
         }
       } else if (session) {
         const parsed = JSON.parse(session)
-        console.log("parsed:", parsed)
         if (parsed) {
           const form = document.querySelector('#checkout')
           const email = document.getElementById('email')

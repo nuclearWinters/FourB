@@ -1311,7 +1311,10 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
         const products = await db.collection("inventory").find().toArray()
         products.forEach(item => {
             const template = Handlebars.compile(html);
-            const result = template(item);
+            const result = template({
+                ...item,
+                price: (item.price / 100).toFixed(2)
+            });
             fs.writeFileSync(`static/product-${item._id}.html`, result)
         })
     });

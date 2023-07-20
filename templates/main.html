@@ -15,7 +15,7 @@
             const name = document.createElement('div')
             name.textContent = product.name
             const price = document.createElement('div')
-            price.textContent = product.price
+            price.textContent = (product.price / 100).toFixed(2)
             const qty = document.createElement('div')
             qty.textContent = product.qty
             projectEl.appendChild(name)
@@ -29,20 +29,17 @@
             projectEl.appendChild(viewButton)
             const buyButton = document.createElement('button')
             buyButton.onclick = async () => {
-              const response = await fetch('http://localhost:8000/add-to-cart', {
-                method: "POST",
-                headers: {
-                  authorization: sessionStorage.getItem("accessToken"),
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  product_id: product._id,
-                  qty: 1
+              try {
+                const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+                  method: "POST",
+                  body: JSON.stringify({
+                    product_id: product._id,
+                    qty: 1
+                  })
                 })
-              })
-              const data = await response.json()
-              if (response.status === 200) {
                 alert("Added to cart")
+              } catch {
+                alert("Error")
               }
             }
             buyButton.textContent = "AÑADIR AL CARRITO"

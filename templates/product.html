@@ -5,25 +5,6 @@
   </head>
   <script type="module" src="main.js"></script>
   <body>
-    <script>
-      const addToCart = async () => {
-        const response = await fetch('http://localhost:8000/add-to-cart', {
-          method: "POST",
-          headers: {
-            authorization: sessionStorage.getItem("accessToken"),
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            product_id: "{{_id}}",
-            qty: 1
-          })
-        })
-        const data = await response.json()
-        if (response.status === 200) {
-          alert("Added to cart")
-        }
-      }
-    </script>
     <fourb-header></fourb-header>
     <p>
       {{name}}
@@ -31,6 +12,25 @@
     <p>
       Precio: {{price}}
     </p>
-    <button onclick="addToCart()">Añadir al carrito</button>
+    <button id="add-to-cart-button">Añadir al carrito</button>
   </body>
+  <script type="module">
+    import { fetchWrapper } from './main.js'
+    const addToCart = async () => {
+      const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+        method: "POST",
+        body: JSON.stringify({
+          product_id: "{{_id}}",
+          qty: 1
+        })
+      })
+      alert("Added to cart")
+    }
+    const button = document.getElementById("add-to-cart-button")
+    if (button) {
+      button.onclick = () => {
+        addToCart()
+      }
+    }
+  </script>
 </html>

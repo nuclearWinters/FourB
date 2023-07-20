@@ -10,6 +10,7 @@
       src="https://assets.conekta.com/component/2.0.2/assets/component.min.js"
     ></script>
     <script type="module" crossorigin defer>
+      import { fetchWrapper } from './main.js'
       const checkout_id = localStorage.getItem("checkout_id")
       if (checkout_id) {
         const config = {
@@ -19,35 +20,33 @@
         };
         const callbacks = {
           onFinalizePayment: async (event) => {
-            console.log(event)
             try {
               localStorage.removeItem("checkout_id")
-              const response = await fetch('http://localhost:8000/confirmation', {
+              await fetchWrapper('http://localhost:8000/confirmation', {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                  "Content-Type": "application/json",
-                  authorization: sessionStorage.getItem("accessToken"),
-                }
               })
-              if (response.headers.accessToken) {
-                sessionStorage("accessToken", response.headers.accessToken)
-              }
-              if (response.status !== 200) {
-                throw new Error(data)
-              }
             } catch {}
           },
-          onErrorPayment: (event) => console.log(event),
-          onGetInfoSuccess: async (event) => console.log(event),
+          onErrorPayment: (event) => {
+            alert("Error")
+          },
         };
         window.ConektaCheckoutComponents.Integration({ config, callbacks });
       }
     </script>
   <body>
-    <script>
-        fetch('http://localhost:8000/add-to-cart')
-        .then(response => response.json())
+    <fourb-header></fourb-header>
+    <p>
+      Carro de compras
+    </p>
+    <div id="products"></div>
+    <form>
+      <div id="example" style="width: 500px; margin: 0 auto"></div>
+    </form>
+    <script type="module">
+      import { fetchWrapper } from './main.js'
+      fetchWrapper('http://localhost:8000/add-to-cart')
         .then(json => {
           const list = document.querySelector('#products')
           json.forEach((product, idx) => {
@@ -56,7 +55,7 @@
             const name = document.createElement('div')
             name.textContent = product.name
             const price = document.createElement('div')
-            price.textContent = product.price
+            price.textContent = (product.price / 100).toFixed(2)
             projectEl.appendChild(name)
             projectEl.appendChild(price)
             const quantity = document.createElement('div')
@@ -71,18 +70,6 @@
             list.appendChild(projectEl)
           })
         });
-      const pay = () => {
-        window.location.href = "/confirmation"
-      }
-    </script>
-    <fourb-header></fourb-header>
-    <p>
-      Carro de compras
-    </p>
-    <div id="products"></div>
-    <form>
-      <div id="example" style="width: 500px; margin: 0 auto"></div>
-      <button type="submit" onclick="pay()">Pagar</button>
-    </form>
+  </script>
   </body>
 </html>

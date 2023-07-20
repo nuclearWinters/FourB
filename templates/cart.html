@@ -16,7 +16,7 @@
           const name = document.createElement('div')
           name.textContent = product.name
           const price = document.createElement('div')
-          price.textContent = product.price
+          price.textContent = (product.price / 100).toFixed(2)
           projectEl.appendChild(name)
           projectEl.appendChild(price)
           const input = document.createElement('input')
@@ -33,43 +33,37 @@
           projectEl.appendChild(viewButton)
           const buyButton = document.createElement('button')
           buyButton.onclick = async () => {
-            const input = document.getElementById(`${idx}-quantity`)
-            const response = await fetch('http://localhost:8000/add-to-cart', {
-              method: "PATCH",
-              headers: {
-                authorization: sessionStorage.getItem("accessToken"),
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                item_by_cart_id: product._id,
-                product_id: product.product_id,
-                qty: Number(input.value)
+            try {
+              const input = document.getElementById(`${idx}-quantity`)
+              const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+                method: "PATCH",
+                body: JSON.stringify({
+                  item_by_cart_id: product._id,
+                  product_id: product.product_id,
+                  qty: Number(input.value)
+                })
               })
-            })
-            const data = await response.json()
-            if (response.status === 200) {
               alert("Item in cart updated")
+            } catch {
+              alert("Error")
             }
           }
           buyButton.textContent = "Actualizar cantidad"
           projectEl.appendChild(buyButton)
           const deleteButton = document.createElement('button')
           deleteButton.onclick = async () => {
-            const response = await fetch('http://localhost:8000/add-to-cart', {
-              method: "DELETE",
-              headers: {
-                authorization: sessionStorage.getItem("accessToken"),
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                item_by_cart_id: product._id,
+            try {
+              const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+                method: "DELETE",
+                body: JSON.stringify({
+                  item_by_cart_id: product._id,
+                })
               })
-            })
-            const data = await response.json()
-            if (response.status === 200) {
               const product = document.getElementById(`${idx}-product`)
               product.remove()
               alert("Item removed")
+            } catch(e) {
+              alert("Error")
             }
           }
           deleteButton.textContent = "Eliminar producto"
@@ -77,15 +71,20 @@
           list.appendChild(projectEl)
         })
       });
-      const pay = () => {
-        window.location.href = "/checkout"
-      }
     </script>
     <fourb-header></fourb-header>
     <p>
       Carro de compras
     </p>
     <div id="products"></div>
-    <button onclick="pay()">Pagar</button>
+    <button id="pay-button">Pagar</button>
+    <script type="module">
+      const button = document.getElementById("pay-button")
+      if (button) {
+        button.onclick = () => {
+          window.location.href = "/checkout"
+        }
+      }
+    </script>
   </body>
 </html>

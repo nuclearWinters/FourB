@@ -6,7 +6,7 @@
   <script type="module" src="main.js"></script>
   <body>
     <script type="module">
-      import { fetchWrapper } from "./main.js"
+      import { fetchWrapper, toCurrency } from "./main.js"
       fetchWrapper('http://localhost:8000/inventory')
         .then(json => {
           const list = document.querySelector('#inventory')
@@ -28,7 +28,14 @@
             priceInput.name = "price"
             priceInput.type = "number"
             priceInput.required = true
-            priceInput.value = product.price
+            priceInput.value = toCurrency(String(product.price), '.')
+            priceInput.id = "currency"
+            priceInput.pattern = "\d*"
+            priceInput.step = "any"
+            priceInput.oninput = (e) => {
+              const valueAsCurrency = toCurrency(e.target.value, '.')
+              priceInput.value = valueAsCurrency
+            }
             const increaseLabel = document.createElement('label')
             increaseLabel.for = "increment"
             increaseLabel.innerText = "Añadir al inventario"
@@ -60,7 +67,7 @@
                   id: product._id,
                   name: form.name.value,
                   increment: Number(form.increment.value),
-                  price: Number(form.price.value),
+                  price: Number(form.price.value) * 100,
                 })
               })
               qty.innerText = `Available: ${data.product.available}`
@@ -72,6 +79,47 @@
     </script>
     <fourb-header></fourb-header>
     <div>Inventario</div>
+    <div>Crear producto</div>
+    <form method="POST" action="http://localhost:8000/inventory" id="create-product">
+      <label for="name">Nombre</label>
+      <input id="name-product" name="name" required type="text" />
+      <label for="name">Cantidad</label>
+      <input id="qty-product" name="qty" required type="number" />
+      <label for="name">Precio</label>
+      <input
+        id="currency"
+        type="number"
+        pattern="\d*"
+        step="any"
+        name="currency"
+        value="0.00"
+        required
+      />
+      <button type="submit">Crear</button>
+    </form>
     <div id="inventory"></div>
+    <script type="module">
+      import { fetchWrapper, toCurrency } from "./main.js"
+      const form = document.getElementById("create-product")
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault()
+        await fetchWrapper("http://localhost:8000/inventory", {
+          method: "POST",
+          body: JSON.stringify({
+            name: form.name.value,
+            qty: Number(form.qty.value),
+            price: Number(form.currency.value) * 100
+          })
+        })
+        form.reset()
+      })
+      const input = document.getElementById("currency")
+      if (input) {
+        input.oninput = (e) => {
+          const valueAsCurrency = toCurrency(e.target.value, '.')
+          input.value = valueAsCurrency
+        }
+      }
+    </script>
   </body>
 </html>

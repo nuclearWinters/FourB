@@ -35,6 +35,39 @@ export const fetchWrapper = async (input = "", init = {}) => {
     return data
 }
 
+const getDigitsFromValue = (value = "") =>
+  value.replace(/(-(?!\d))|[^0-9|-]/g, "") || ""
+
+const padDigits = (digits) => {
+  const desiredLength = 3
+  const actualLength = digits.length
+
+  if (actualLength >= desiredLength) {
+    return digits
+  }
+
+  const amountToAdd = desiredLength - actualLength
+  const padding = "0".repeat(amountToAdd)
+
+  return padding + digits
+}
+
+const removeLeadingZeros = (number) =>
+  number.replace(/^0+([0-9]+)/, "$1")
+
+const addDecimalToNumber = (number, separator = ".") => {
+  const centsStartingPosition = number.length - 2
+  const dollars = removeLeadingZeros(number.substring(0, centsStartingPosition))
+  const cents = number.substring(centsStartingPosition)
+  return dollars + separator + cents
+}
+
+export const toCurrency = (value, separator = ".") => {
+  const digits = getDigitsFromValue(value)
+  const digitsWithPadding = padDigits(digits)
+  return addDecimalToNumber(digitsWithPadding, separator)
+}
+
 export const getCookie = (cname) => {
   let name = cname + "=";
   let decodedCookie = decodeURIComponent(document.cookie);
