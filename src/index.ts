@@ -335,12 +335,25 @@ app.post('/inventory', async (req, res) => {
             throw new Error("Name is required and must be a string")
         }
         const { inventory } = req.app.locals as ContextLocals
-        await inventory.insertOne({
+        const inventoryResult = await inventory.insertOne({
             available: qty,
             total: qty,
             name,
             price,
         })
+        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
+            if (err) throw err;
+            const template = Handlebars.compile(html);
+            const result = template({
+                available: qty,
+                total: qty,
+                name,
+                price: (price / 100).toFixed(2),
+                buttonText: qty ? "Añadir al carrito" : "Agotado",
+                buttonProps: qty ? "" : "disabled"
+            });
+            fs.writeFileSync(`static/product-${inventoryResult.insertedId}.html`, result)
+        });
         res.status(200).json("OK!")
     } catch(e) {
         if (e instanceof Error) {
@@ -400,12 +413,26 @@ app.patch('/inventory', async (req, res) => {
         {
             returnDocument: "after",
         })
-        if (!result.value) {
+        const { value } = result
+        if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
         if (price) {
             await itemsByCart.updateMany({ product_id: product_oid }, { $set: { price } })
         }
+        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
+            if (err) throw err;
+            const template = Handlebars.compile(html);
+            const templateResult = template({
+                available: value.available,
+                total: value.total,
+                name: value.name,
+                price: (value.price / 100).toFixed(2),
+                buttonText: value.available ? "Añadir al carrito" : "Agotado",
+                buttonProps: value.available ? "" : "disabled"
+            });
+            fs.writeFileSync(`static/product-${result.value?._id}.html`, templateResult)
+        });
         res.status(200).json({
             product: result.value
         })
@@ -698,9 +725,23 @@ app.post('/add-to-cart', async (req, res) => {
         {
             returnDocument: "after"
         })
-        if (!product.value) {
+        const { value } = product
+        if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
+        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
+            if (err) throw err;
+            const template = Handlebars.compile(html);
+            const templateResult = template({
+                available: value.available,
+                total: value.total,
+                name: value.name,
+                price: (value.price / 100).toFixed(2),
+                buttonText: value.available ? "Añadir al carrito" : "Agotado",
+                buttonProps: value.available ? "" : "disabled"
+            });
+            fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
+        });
         const expireDate = new Date()
         expireDate.setHours(expireDate.getHours() + 1)
         const reserved = await reservedInventory.updateOne({
@@ -712,7 +753,7 @@ app.post('/add-to-cart', async (req, res) => {
                 qty,
             },
             $setOnInsert: {
-                price: product.value.price,
+                price: value.price,
                 cart_id: cart_oid,
                 product_id: product_oid,
             },
@@ -733,10 +774,10 @@ app.post('/add-to-cart', async (req, res) => {
                     qty
                 },
                 $setOnInsert: {
-                    name: product.value.name,
+                    name: value.name,
                     product_id: product_oid,
                     cart_id: cart_oid,
-                    price: product.value.price,
+                    price: value.price,
                 }
             },
             {
@@ -809,9 +850,23 @@ app.patch('/add-to-cart', async (req, res) => {
         {
             returnDocument: "after"
         })
-        if (!product.value) {
+        const { value } = product
+        if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
+        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
+            if (err) throw err;
+            const template = Handlebars.compile(html);
+            const templateResult = template({
+                available: value.available,
+                total: value.total,
+                name: value.name,
+                price: (value.price / 100).toFixed(2),
+                buttonText: value.available ? "Añadir al carrito" : "Agotado",
+                buttonProps: value.available ? "" : "disabled"
+            });
+            fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
+        });
         const item_by_cart_oid = new ObjectId(item_by_cart_id)
         const result = await itemsByCart.updateOne(
             {
@@ -821,8 +876,8 @@ app.patch('/add-to-cart', async (req, res) => {
             {
                 $set: {
                     qty,
-                    price: product.value.price,
-                    name: product.value.name,
+                    price: value.price,
+                    name: value.name,
                 },
             },
         )
@@ -907,7 +962,7 @@ app.delete('/add-to-cart', async (req, res) => {
         if (!reservation.value) {
             throw new Error("Item in reservation was not deleted.")
         }
-        const product = await inventory.updateOne({
+        const product = await inventory.findOneAndUpdate({
             _id: result.value.product_id,
         },
         {
@@ -915,9 +970,23 @@ app.delete('/add-to-cart', async (req, res) => {
                 available: reservation.value.qty
             },
         })
-        if (!product.modifiedCount) {
+        const { value } = product
+        if (!value) {
             throw new Error("Inventory not modified.")
         }
+        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
+            if (err) throw err;
+            const template = Handlebars.compile(html);
+            const templateResult = template({
+                available: value.available,
+                total: value.total,
+                name: value.name,
+                price: (value.price / 100).toFixed(2),
+                buttonText: value.available ? "Añadir al carrito" : "Agotado",
+                buttonProps: value.available ? "" : "disabled"
+            });
+            fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
+        });
         res.status(200).json("Ok")
     } catch(e) {
         if (e instanceof Error) {
@@ -1313,7 +1382,9 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
             const template = Handlebars.compile(html);
             const result = template({
                 ...item,
-                price: (item.price / 100).toFixed(2)
+                price: (item.price / 100).toFixed(2),
+                buttonText: item.available ? "Añadir al carrito" : "Agotado",
+                buttonProps: item.available ? "" : "disabled"
             });
             fs.writeFileSync(`static/product-${item._id}.html`, result)
         })

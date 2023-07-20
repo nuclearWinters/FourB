@@ -12,7 +12,7 @@
     <p>
       Precio: {{price}}
     </p>
-    <button id="add-to-cart-button">Añadir al carrito</button>
+    <button id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>
   </body>
   <script type="module">
     import { fetchWrapper } from './main.js'

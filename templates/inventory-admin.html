@@ -45,6 +45,11 @@
             increaseInput.value = 0
             const button = document.createElement("button")
             button.innerText = "Actualizar"
+            const viewButton = document.createElement("button")
+            viewButton.innerText = "Ver"
+            viewButton.onclick = () => {
+              window.location.href = `/product-${product._id}`
+            }
             const qty = document.createElement("div")
             qty.innerText = `Disponible: ${product.available}`
             const total = document.createElement("div")
@@ -58,6 +63,7 @@
             form.appendChild(qty)
             form.appendChild(total)
             form.appendChild(button)
+            form.appendChild(viewButton)
             projectEl.appendChild(form)
             form.addEventListener("submit", async (e) => {
               e.preventDefault()
