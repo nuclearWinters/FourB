@@ -5,85 +5,85 @@
   </head>
   <script type="module" src="main.js"></script>
   <body>
-    <script>
-        fetch('http://localhost:8000/add-to-cart')
-        .then(response => response.json())
-        .then(json => {
-          const list = document.querySelector('#products')
-          json.forEach((product, idx) => {
-            const projectEl = document.createElement('div')
-            projectEl.id = `${idx}-product`
-            const name = document.createElement('div')
-            name.textContent = product.name
-            const price = document.createElement('div')
-            price.textContent = product.price
-            projectEl.appendChild(name)
-            projectEl.appendChild(price)
-            const input = document.createElement('input')
-            input.type = "number"
-            input.id = `${idx}-quantity`
-            input.value = product.qty
-            input.min = "1"
-            projectEl.appendChild(input)
-            const viewButton = document.createElement('button')
-            viewButton.onclick = () => {
-              window.location.href = `/product-${product._id}`;
-            }
-            viewButton.textContent = "VIEW"
-            projectEl.appendChild(viewButton)
-            const buyButton = document.createElement('button')
-            buyButton.onclick = async () => {
-              const input = document.getElementById(`${idx}-quantity`)
-              const response = await fetch('http://localhost:8000/add-to-cart', {
-                method: "PATCH",
-                headers: {
-                  authorization: sessionStorage.getItem("accessToken"),
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  item_by_cart_id: product._id,
-                  product_id: product.product_id,
-                  qty: Number(input.value)
-                })
+    <script type="module">
+      import { fetchWrapper } from "./main.js"
+      fetchWrapper('http://localhost:8000/add-to-cart')
+      .then(json => {
+        const list = document.querySelector('#products')
+        json.forEach((product, idx) => {
+          const projectEl = document.createElement('div')
+          projectEl.id = `${idx}-product`
+          const name = document.createElement('div')
+          name.textContent = product.name
+          const price = document.createElement('div')
+          price.textContent = product.price
+          projectEl.appendChild(name)
+          projectEl.appendChild(price)
+          const input = document.createElement('input')
+          input.type = "number"
+          input.id = `${idx}-quantity`
+          input.value = product.qty
+          input.min = "1"
+          projectEl.appendChild(input)
+          const viewButton = document.createElement('button')
+          viewButton.onclick = () => {
+            window.location.href = `/product-${product._id}`;
+          }
+          viewButton.textContent = "VER"
+          projectEl.appendChild(viewButton)
+          const buyButton = document.createElement('button')
+          buyButton.onclick = async () => {
+            const input = document.getElementById(`${idx}-quantity`)
+            const response = await fetch('http://localhost:8000/add-to-cart', {
+              method: "PATCH",
+              headers: {
+                authorization: sessionStorage.getItem("accessToken"),
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                item_by_cart_id: product._id,
+                product_id: product.product_id,
+                qty: Number(input.value)
               })
-              const data = await response.json()
-              if (response.status === 200) {
-                alert("Item in cart updated")
-              }
+            })
+            const data = await response.json()
+            if (response.status === 200) {
+              alert("Item in cart updated")
             }
-            buyButton.textContent = "UPDATE ITEM"
-            projectEl.appendChild(buyButton)
-            const deleteButton = document.createElement('button')
-            deleteButton.onclick = async () => {
-              const response = await fetch('http://localhost:8000/add-to-cart', {
-                method: "DELETE",
-                headers: {
-                  authorization: sessionStorage.getItem("accessToken"),
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  item_by_cart_id: product._id,
-                })
+          }
+          buyButton.textContent = "Actualizar cantidad"
+          projectEl.appendChild(buyButton)
+          const deleteButton = document.createElement('button')
+          deleteButton.onclick = async () => {
+            const response = await fetch('http://localhost:8000/add-to-cart', {
+              method: "DELETE",
+              headers: {
+                authorization: sessionStorage.getItem("accessToken"),
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                item_by_cart_id: product._id,
               })
-              const data = await response.json()
-              if (response.status === 200) {
-                const product = document.getElementById(`${idx}-product`)
-                product.remove()
-                alert("Item removed")
-              }
+            })
+            const data = await response.json()
+            if (response.status === 200) {
+              const product = document.getElementById(`${idx}-product`)
+              product.remove()
+              alert("Item removed")
             }
-            deleteButton.textContent = "REMOVE ITEM"
-            projectEl.appendChild(deleteButton)
-            list.appendChild(projectEl)
-          })
-        });
+          }
+          deleteButton.textContent = "Eliminar producto"
+          projectEl.appendChild(deleteButton)
+          list.appendChild(projectEl)
+        })
+      });
       const pay = () => {
         window.location.href = "/checkout"
       }
     </script>
     <fourb-header></fourb-header>
     <p>
-      Products in cart
+      Carro de compras
     </p>
     <div id="products"></div>
     <button onclick="pay()">Pagar</button>

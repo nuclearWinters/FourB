@@ -8,6 +8,7 @@ import jsonwebtoken, { SignOptions } from "jsonwebtoken"
 import cookieParser from "cookie-parser"
 import { CustomersApi, Configuration, OrdersApi } from 'conekta';
 import { Request } from 'express';
+import { AxiosError } from "axios"
 
 const apikey = "key_pMkl11iWacZYSvetll0CaMc";
 const config = new Configuration({ accessToken: apikey });
@@ -23,7 +24,7 @@ export const NODE_ENV = process.env.NODE_ENV || "development";
 class Context {
   static _bindings = new WeakMap<Request, Context>();
   
-  public userJWT: UserJWT | null = null;
+  public userJWT: DecodeJWT | null = null;
   public sessionCookie: SessionCookie | null = null;
    
   constructor () {}
@@ -49,6 +50,8 @@ interface UserMongo {
     conekta_id: string;
     default_address: ObjectId | null;
     addresses: AddressUser[]
+    phone_prefix: string;
+    is_admin: boolean;
 }
 
 interface AddressUser {
@@ -112,6 +115,17 @@ interface ItemsByCartMongo {
     name: string;
 }
 
+interface PurchasesMongo {
+    _id?: ObjectId;
+    product_id: ObjectId,
+    qty: number;
+    price: number;
+    name: string;
+    user_id: ObjectId | null;
+    session_id: ObjectId;
+    date: Date;
+}
+
 interface CartsByUserMongo {
     _id?: ObjectId;
     user_id: ObjectId;
@@ -132,18 +146,12 @@ interface ContextLocals {
     cartsByUser: Collection<CartsByUserMongo>;
     reservedInventory: Collection<ReservedInventoryMongo>;
     sessions: Collection<SessionMongo>
+    purchases: Collection<PurchasesMongo>
 }
 
 interface UserJWT {
     _id: string;
-    email: string | null;
     cart_id: string;
-    name: string | null;
-    apellidos: string | null;
-    phone: string | null;
-    conekta_id: string | null;
-    default_address: string | null;
-    addresses: AddressUserJWT[];
 }
 
 interface SessionCookie {
@@ -155,7 +163,8 @@ interface SessionCookie {
     phone: string | null;
     conekta_id: string | null;
     default_address: string | null;
-    addresses: AddressUserJWT[]
+    addresses: AddressUserJWT[];
+    phone_prefix: string | null;
 }
 
 export interface DecodeJWT {
@@ -172,11 +181,11 @@ export const jwt = {
     },
     verify: (token: string, password: string): DecodeJWT | null => {
         try {
-            const decoded = jsonwebtoken.verify(token, password);
-            if (typeof decoded === "string") {
-              throw new Error("payload is string")
+            const payload = jsonwebtoken.verify(token, password);
+            if (typeof payload === "string") {
+              throw new Error("payload is not string")
             }
-            return decoded as DecodeJWT;
+            return payload as DecodeJWT;
         } catch {
             return null
         }
@@ -213,30 +222,33 @@ app.use((req, res, next) => {
     }
     const authorization = req.headers.authorization
     if (authorization) {
-        const user = jwt.verify(authorization, ACCESSSECRET)
-        if (user && typeof user !== "string") {
+        const payload = jwt.verify(authorization, ACCESSSECRET)
+        if (payload && typeof payload !== "string") {
             if (ctx) {
-                ctx.userJWT = user.user
+                ctx.userJWT = payload
             }
         }
     }
     if (!req.app.locals.id) {
-        const user = jwt.verify(refreshToken, REFRESHSECRET);
-        if (user) {
+        const payload = jwt.verify(refreshToken, REFRESHSECRET);
+        if (payload) {
             const now = new Date();
             now.setMilliseconds(0);
             const accessTokenExpireTime = now.getTime() / 1000 + ACCESS_TOKEN_EXP_NUMBER;
             const newAccessToken = jwt.sign(
               {
-                user: user.user,
-                refreshTokenExpireTime: user.exp,
-                exp: accessTokenExpireTime > user.exp ? user.exp : accessTokenExpireTime,
+                user: {
+                    _id: payload.user._id,
+                    cart_id: payload.user.cart_id
+                },
+                refreshTokenExpireTime: payload.exp,
+                exp: accessTokenExpireTime > payload.exp ? payload.exp : accessTokenExpireTime,
               },
               ACCESSSECRET
             );
             res.setHeader("accessToken", newAccessToken)
             if (ctx) {
-                ctx.userJWT = user.user
+                ctx.userJWT = payload
             }
         }
     }
@@ -285,6 +297,7 @@ app.use(async (req, res, next) => {
                 phone: null,
                 conekta_id: null,
                 default_address: null,
+                phone_prefix: null,
             }
         }
     } else {
@@ -351,20 +364,26 @@ app.patch('/inventory', async (req, res) => {
             throw new Error("ID must contain 24 characters")
         }
         if (increment && typeof increment !== "number") {
-            throw new Error("Increment is required and must be a number")
+            throw new Error("Increment must be a number")
         }
         if (price && typeof price !== "number") {
-            throw new Error("Price is required and must be a number")
+            throw new Error("Price and must be a number")
         }
         if (name && typeof name !== "string") {
-            throw new Error("Increment is required and must be a number")
+            throw new Error("Name must be a string")
         }
         if (!(price || name || increment)) {
             throw new Error("At least one field is required")
         }
         const { inventory, itemsByCart } = req.app.locals as ContextLocals
         const product_oid = new ObjectId(id)
-        const result = await inventory.updateOne({ _id: product_oid, qty: { $gte: -increment } },{
+        const result = await inventory.findOneAndUpdate({
+            _id: product_oid,
+            available: {
+                $gte: -increment
+            }
+        },
+        {
             ...(increment ? {
                 $inc: {
                     available: increment,
@@ -377,14 +396,19 @@ app.patch('/inventory', async (req, res) => {
                     ...(price ? { price } : {})
                 }
             } : {})
+        },
+        {
+            returnDocument: "after",
         })
-        if (!result.modifiedCount) {
+        if (!result.value) {
             throw new Error("Not enough inventory or product not found")
         }
         if (price) {
-            await itemsByCart.updateMany({ product_id: product_oid }, { price })
+            await itemsByCart.updateMany({ product_id: product_oid }, { $set: { price } })
         }
-        res.status(200).json("OK!")
+        res.status(200).json({
+            product: result.value
+        })
     } catch(e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
@@ -432,12 +456,14 @@ app.post('/register', async (req, res) => {
         const user_id = new ObjectId();
         const user = await users.findOne({ email });
         if (user) throw new Error("El email ya esta siendo usado.");
-        const customer = await customerClient.createCustomer({
-            name: `${name} ${apellidos}` ,
-            email,
-            phone: phonePrefix + phone,
-        });
-        const hash_password = await bcrypt.hash(password, 12);
+        const [customer, hash_password] = await Promise.all([
+            customerClient.createCustomer({
+                name: `${name} ${apellidos}` ,
+                email,
+                phone: phonePrefix + phone,
+            }),
+            bcrypt.hash(password, 12),
+        ])
         const now = new Date();
         now.setMilliseconds(0);
         const nowTime = now.getTime() / 1000;
@@ -447,14 +473,7 @@ app.post('/register', async (req, res) => {
           {
             user: {
                 _id: user_id.toHexString(),
-                email,
                 cart_id: cart_id.toHexString(),
-                name,
-                apellidos,
-                conekta_id: customer.data.id,
-                phone,
-                default_address: null,
-                addresses: [],
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: refreshTokenExpireTime,
@@ -465,14 +484,7 @@ app.post('/register', async (req, res) => {
           {
             user: {
                 _id: user_id.toHexString(),
-                email,
                 cart_id: cart_id.toHexString(),
-                name,
-                apellidos,
-                conekta_id: customer.data.id,
-                phone,
-                default_address: null,
-                addresses: []
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: accessTokenExpireTime,
@@ -485,7 +497,7 @@ app.post('/register', async (req, res) => {
           expires: refreshTokenExpireDate,
           secure: NODE_ENV === "production" ? true : false,
         });
-        await users.insertOne({
+        const userData = {
             _id: user_id,
             email,
             password: hash_password,
@@ -496,19 +508,25 @@ app.post('/register', async (req, res) => {
             phone,
             default_address: null,
             addresses: [],
-        })
-        await cartsByUser.insertOne({
-            _id: cart_id,
-            user_id,
-            expireDate: null
-        })
+            phone_prefix: phonePrefix,
+            is_admin: false,
+        }
+        await Promise.all([
+            users.insertOne(userData),
+            cartsByUser.insertOne({
+                _id: cart_id,
+                user_id,
+                expireDate: null
+            }),
+        ])
         res.setHeader("accessToken", accessToken)
         res.status(200).json({
-            _id: user_id,
-            cart_id,
+            user: userData
         })
     } catch(e) {
-        if (e instanceof Error) {
+        if (e instanceof AxiosError) {
+            res.status(400).json(e.response?.data?.details?.[0].message)
+        } if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
             res.status(400).json("Error")
@@ -517,9 +535,67 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/log-out', async (_req, res) => {
-    res.clearCookie("refreshToken");
+    res.clearCookie("refreshToken")
     res.setHeader("accessToken", "")
     res.status(200).json("Ok!")
+})
+
+app.patch('/user', async (req, res) => {
+    try {
+        const ctx = Context.get(req);
+        if (!ctx?.userJWT?.user._id) {
+            throw new Error("Inicia sesión primero")
+        }
+        const email = req.body.email
+        const name = req.body.name
+        const apellidos = req.body.apellidos
+        const phonePrefix = req.body.phonePrefix
+        const phone = req.body.phone
+        const { users } = req.app.locals as ContextLocals
+        if (!email || typeof email !== "string") {
+            throw new Error("Email is required and must be a string")
+        }
+        if (!name || typeof name !== "string") {
+            throw new Error("Name is required and must be a string")
+        }
+        if (!apellidos || typeof apellidos !== "string") {
+            throw new Error("Apellidos is required and must be a string")
+        }
+        if (!phone || typeof phone !== "string") {
+            throw new Error("Phone is required and must be a string")
+        }
+        if (phonePrefix !== "+52") {
+            throw new Error("Phone must be from Mexico")
+        }
+        const user_oid = new ObjectId(ctx?.userJWT?.user._id)
+        const user = await users.findOneAndUpdate(
+            { _id: user_oid },
+            {
+                $set: {
+                    name,
+                    email,
+                    apellidos,
+                    phone,
+                    phone_prefix: phonePrefix,
+                }
+            },
+            {
+                returnDocument: "after",
+            }
+        );
+        res.status(200).json({
+            user: {
+                ...user.value,
+                password: undefined,
+            },
+        })
+    } catch(e) {
+        if (e instanceof Error) {
+            res.status(400).json(e.message)
+        } else {
+            res.status(400).json("Error")
+        }
+    }
 })
 
 app.post('/log-in', async (req, res) => {
@@ -551,14 +627,7 @@ app.post('/log-in', async (req, res) => {
           {
             user: {
                 _id: user._id.toHexString(),
-                email: user.email,
                 cart_id: user.cart_id.toHexString(),
-                name: user.name,
-                apellidos: user.apellidos,
-                conekta_id: user.conekta_id,
-                phone: user.phone,
-                default_address: user.default_address ? user.default_address.toHexString() : user.default_address,
-                addresses: user.addresses.map(address => ({ ...address, _id: address._id.toHexString() })),
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: refreshTokenExpireTime,
@@ -569,14 +638,7 @@ app.post('/log-in', async (req, res) => {
           {
             user: {
                 _id: user._id.toHexString(),
-                email: user.email,
                 cart_id: user.cart_id.toHexString(),
-                name: user.name,
-                apellidos: user.apellidos,
-                conekta_id: user.conekta_id,
-                phone: user.phone,
-                default_address: user.default_address ? user.default_address.toHexString() : user.default_address,
-                addresses: user.addresses.map(address => ({ ...address, _id: address._id.toHexString() })),
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: accessTokenExpireTime,
@@ -591,8 +653,10 @@ app.post('/log-in', async (req, res) => {
         });
         res.setHeader("accessToken", accessToken)
         res.status(200).json({
-            _id: user._id,
-            cart_id: user.cart_id
+            user: {
+                ...user,
+                password: undefined
+            }
         })
     } catch(e) {
         if (e instanceof Error) {
@@ -618,7 +682,7 @@ app.post('/add-to-cart', async (req, res) => {
         if (qty && typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
-        const cart_oid = new ObjectId(ctx?.userJWT?.cart_id || ctx?.sessionCookie?.cart_id)
+        const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         const product_oid = new ObjectId(product_id)
         const product = await inventory.findOneAndUpdate({
             _id: product_oid,
@@ -722,7 +786,7 @@ app.patch('/add-to-cart', async (req, res) => {
         if (qty && typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
-        const cart_oid = new ObjectId(ctx?.userJWT?.cart_id || ctx?.sessionCookie?.cart_id)
+        const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         const product_oid = new ObjectId(product_id)
         const reserved = await reservedInventory.findOneAndDelete({
             cart_id: cart_oid,
@@ -798,7 +862,7 @@ app.get('/add-to-cart', async (req, res) => {
     try {
         const ctx = Context.get(req);
         const { itemsByCart } = req.app.locals as ContextLocals
-        const cart_oid = new ObjectId(ctx?.userJWT?.cart_id || ctx?.sessionCookie?.cart_id)
+        const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         const itemsInCart = await itemsByCart.find({ cart_id: cart_oid }).toArray()
         res.header("Cache-Control", "no-cache, no-store, must-revalidate");
         res.header("Pragma", "no-cache");
@@ -824,7 +888,7 @@ app.delete('/add-to-cart', async (req, res) => {
         if (item_by_cart_id.length !== 24) {
             throw new Error("Product ID must contain 24 characters")
         }
-        const cart_oid = new ObjectId(ctx?.userJWT?.cart_id || ctx?.sessionCookie?.cart_id)
+        const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         const item_by_cart_oid = new ObjectId(item_by_cart_id)
         const result = await itemsByCart.findOneAndDelete(
             {
@@ -896,10 +960,10 @@ app.post('/checkout', async (req, res) => {
         if (!phone || typeof phone !== "string") {
             throw new Error("Phone is required and must be a string")
         }
-        const cart_oid = new ObjectId(ctx?.userJWT?.cart_id || ctx?.sessionCookie?.cart_id)
+        const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         if (address_id && typeof address_id === "string" && ctx?.userJWT) {
             const address_oid = new ObjectId(address_id) 
-            const user_oid = new ObjectId(ctx.userJWT._id)
+            const user_oid = new ObjectId(ctx.userJWT.user._id)
             const result = await users.findOneAndUpdate({
                 _id: user_oid,
                 "addresses._id": address_oid,
@@ -942,13 +1006,13 @@ app.post('/checkout', async (req, res) => {
                     allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
                 }
             })
-            res.status(200).json({
-                ...user,
+            return res.status(200).json({
+                user,
                 checkout_id: order?.data?.checkout?.id
             })
         } else if (ctx?.userJWT) {
             const address_id = new ObjectId()
-            const user_oid = new ObjectId(ctx.userJWT._id)
+            const user_oid = new ObjectId(ctx.userJWT.user._id)
             const result = await users.findOneAndUpdate({
                 _id: user_oid,
             },
@@ -995,8 +1059,8 @@ app.post('/checkout', async (req, res) => {
                     allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
                 }
             })
-            res.status(200).json({
-                ...user,
+            return res.status(200).json({
+                user,
                 checkout_id: order?.data?.checkout?.id
             })
         } else {
@@ -1054,15 +1118,16 @@ app.post('/checkout', async (req, res) => {
                     allowed_payment_methods: ['card', 'cash', 'bank_transfer'],
                 }
             })
+            result.value.conekta_id = conekta_id
             res.cookie("session", JSON.stringify(result.value))
             res.status(200).json({
-                ...result.value,
-                conekta_id,
                 checkout_id: order?.data?.checkout?.id
             })
         }
     } catch(e) {
-        if (e instanceof Error) {
+        if (e instanceof AxiosError) {
+            res.status(400).json(e.response?.data?.details?.[0].message)
+        } else if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
             res.status(400).json("Error")
@@ -1073,51 +1138,114 @@ app.post('/checkout', async (req, res) => {
 app.post('/confirmation', async (req, res) => {
     try {
         const ctx = Context.get(req);
-        const { users, cartsByUser, sessions } = req.app.locals as ContextLocals
+        const { users, cartsByUser, sessions, purchases, itemsByCart } = req.app.locals as ContextLocals
         const new_cart_id = new ObjectId()
-        const previous_cart_id = new ObjectId(ctx?.userJWT?.cart_id || ctx?.sessionCookie?.cart_id)
+        const previous_cart_id = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
+        const session_oid = new ObjectId(ctx?.sessionCookie?._id)
         if (ctx?.userJWT) {
-            const user_oid = new ObjectId(ctx.userJWT._id)
-            await users.updateOne({
-                _id: user_oid
-            }, {
-                $set: {
-                    cart_id: new_cart_id
-                }
-            })
-        } else {
-            const session_oid = new ObjectId(ctx?.sessionCookie?._id)
-            const session = await sessions.findOneAndUpdate(
-                {
-                    _id: session_oid
-                },
-                {
+            const user_oid = new ObjectId(ctx.userJWT.user._id)
+            const [user] = await Promise.all([users.findOneAndUpdate({
+                    _id: user_oid
+                }, {
                     $set: {
                         cart_id: new_cart_id
                     }
                 },
                 {
                     returnDocument: "after"
-                }
-            )
+                }),
+                cartsByUser.bulkWrite([
+                    {
+                        updateOne: {
+                            filter: {
+                                _id: previous_cart_id
+                            },
+                            update: {
+                                $set: {
+                                    expireDate: null
+                                }
+                            }
+                        },
+                        insertOne: {
+                            document: {
+                                _id: new_cart_id,
+                                user_id: user_oid,
+                                expireDate: null
+                            }
+                        }
+                    }
+                ])
+            ])
+            const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
+            const purchasedProducts = productsInCart.map(product => ({
+                name: product.name,
+                product_id: product._id,
+                qty: product.qty,
+                price: product.price,
+                user_id: user_oid,
+                session_id: session_oid,
+                date: new Date(),
+            }))
+            await purchases.insertMany(purchasedProducts)
+            return res.status(200).json({
+                user
+            })
+        } else {
+            const [session] = await Promise.all([
+                sessions.findOneAndUpdate(
+                    {
+                        _id: session_oid
+                    },
+                    {
+                        $set: {
+                            cart_id: new_cart_id
+                        }
+                    },
+                    {
+                        returnDocument: "after"
+                    }
+                ),
+                cartsByUser.bulkWrite([
+                    {
+                        updateOne: {
+                            filter: {
+                                _id: previous_cart_id
+                            },
+                            update: {
+                                $set: {
+                                    expireDate: null
+                                }
+                            }
+                        },
+                        insertOne: {
+                            document: {
+                                _id: new_cart_id,
+                                user_id: session_oid,
+                                expireDate: null
+                            }
+                        }
+                    }
+                ])
+                
+            ])
+            const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
+            const purchasedProducts = productsInCart.map(product => ({
+                name: product.name,
+                product_id: product._id,
+                qty: product.qty,
+                price: product.price,
+                user_id: null,
+                session_id: session_oid,
+                date: new Date(),
+            }))
+            await purchases.insertMany(purchasedProducts)
             if (session.value) {
                 res.cookie("session", JSON.stringify(session.value))
             }
+            return res.status(200).json({
+                user: null,
+            })
         }
-        const user_oid = new ObjectId(ctx?.userJWT?._id || ctx?.sessionCookie?._id)
-        await cartsByUser.updateOne({
-            _id: previous_cart_id
-        }, {
-            $set: {
-                expireDate: null
-            }
-        })
-        await cartsByUser.insertOne({
-            _id: new_cart_id,
-            user_id: user_oid,
-            expireDate: null
-        })
-        res.status(200).json("OK")
     } catch(e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
@@ -1127,8 +1255,34 @@ app.post('/confirmation', async (req, res) => {
     }
 });
 
+app.get('/purchases', async (req, res) => {    
+    try {
+        const ctx = Context.get(req);
+        if (!ctx?.userJWT?.user._id) {
+            throw new Error("Inicia sesión primero")
+        }
+        const { purchases } = req.app.locals as ContextLocals
+        const user_oid = new ObjectId(ctx?.userJWT?.user._id)
+        const history = await purchases.find({ user_id: user_oid }).toArray()
+        res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.header("Pragma", "no-cache");
+        res.header("Expires", "0");
+        res.status(200).json(history)
+    } catch(e) {
+        if (e instanceof Error) {
+            res.status(400).json(e.message)
+        } else {
+            res.status(400).json("Error")
+        }
+    }
+})
+
 app.get('*', async (req, res) => {
     try {
+        if (req.path === "/") {
+            const template = fs.readFileSync(`static/main.html`, 'utf-8');
+            return res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+        }
         if (req.path.includes(".js")) {
             const template = fs.readFileSync(`static/${req.path}`, 'utf-8');
             return res.status(200).set({ 'Content-Type': 'application/javascript' }).end(template);
@@ -1145,20 +1299,10 @@ app.get('*', async (req, res) => {
 });
 
 //Define site pages
-//Main
-//Account
-//Cart
-//Product
-//Checkout
-//Payment
-//Confirmation
-//Historial
-//Better State Management?
-//Web Component for Header
-//Create Fetch wrapper
 //Update pages on demand
 //Promotions?
-//Cron job?
+//Cron job or mongo tasks?
+//Estilos
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
@@ -1170,6 +1314,14 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
             const result = template(item);
             fs.writeFileSync(`static/product-${item._id}.html`, result)
         })
+    });
+    fs.readFile('templates/history.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/history.html`, html)
+    });
+    fs.readFile('templates/inventory-admin.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/inventory-admin.html`, html)
     });
     fs.readFile('templates/main.html', 'utf8', async (err, html) => {
         if (err) throw err;
@@ -1187,6 +1339,10 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
         if (err) throw err;
         fs.writeFileSync(`static/payment.html`, html)
     });
+    fs.readFile('templates/account.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        fs.writeFileSync(`static/account.html`, html)
+    });
     fs.readFile('templates/main.js', 'utf8', async (err, html) => {
         if (err) throw err;
         fs.writeFileSync(`static/main.js`, html)
@@ -1201,6 +1357,7 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     app.locals.itemsByCart = db.collection("items_by_cart")
     app.locals.reservedInventory = db.collection("reserved_inventory")
     app.locals.sessions = db.collection("sessions")
+    app.locals.purchases = db.collection("purchases")
     app.listen(8000)
 })
 

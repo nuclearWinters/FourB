@@ -7,9 +7,9 @@
   <body>
     <script type="module">
       import { fetchWrapper } from "./main.js"
-      fetchWrapper('http://localhost:8000/inventory')
+      fetchWrapper('http://localhost:8000/purchases')
         .then(json => {
-          const list = document.querySelector('#products')
+          const list = document.querySelector('#purchases')
           json.forEach(product => {
             const projectEl = document.createElement('div')
             const name = document.createElement('div')
@@ -45,14 +45,14 @@
                 alert("Added to cart")
               }
             }
-            buyButton.textContent = "AÑADIR AL CARRITO"
+            buyButton.textContent = "AÑADIR AL CARRITO OTRA VEZ"
             projectEl.appendChild(buyButton)
             list.appendChild(projectEl)
           })
         });
     </script>
     <fourb-header></fourb-header>
-    <div>Productos</div>
-    <div id="products"></div>
+    <div>Compras recientes</div>
+    <div id="purchases"></div>
   </body>
 </html>

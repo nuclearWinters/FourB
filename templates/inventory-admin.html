@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="main.css">
+  </head>
+  <script type="module" src="main.js"></script>
+  <body>
+    <script type="module">
+      import { fetchWrapper } from "./main.js"
+      fetchWrapper('http://localhost:8000/inventory')
+        .then(json => {
+          const list = document.querySelector('#inventory')
+          json.forEach(product => {
+            const projectEl = document.createElement('div')
+            const form = document.createElement("form")
+            const nameLabel = document.createElement('label')
+            nameLabel.for = "name"
+            nameLabel.innerText = "Nombre"
+            const nameInput = document.createElement('input')
+            nameInput.name = "name"
+            nameInput.type = "text"
+            nameInput.required = true
+            nameInput.value = product.name
+            const priceLabel = document.createElement('label')
+            priceLabel.for = "price"
+            priceLabel.innerText = "Precio"
+            const priceInput = document.createElement('input')
+            priceInput.name = "price"
+            priceInput.type = "number"
+            priceInput.required = true
+            priceInput.value = product.price
+            const increaseLabel = document.createElement('label')
+            increaseLabel.for = "increment"
+            increaseLabel.innerText = "Añadir al inventario"
+            const increaseInput = document.createElement('input')
+            increaseInput.name = "increment"
+            increaseInput.type = "number"
+            increaseInput.value = 0
+            const button = document.createElement("button")
+            button.innerText = "Actualizar"
+            const qty = document.createElement("div")
+            qty.innerText = `Disponible: ${product.available}`
+            const total = document.createElement("div")
+            total.innerText = `Total: ${product.total}`
+            form.appendChild(nameLabel)
+            form.appendChild(nameInput)
+            form.appendChild(priceLabel)
+            form.appendChild(priceInput)
+            form.appendChild(increaseLabel)
+            form.appendChild(increaseInput)
+            form.appendChild(qty)
+            form.appendChild(total)
+            form.appendChild(button)
+            projectEl.appendChild(form)
+            form.addEventListener("submit", async (e) => {
+              e.preventDefault()
+              const data = await fetchWrapper("http://localhost:8000/inventory", {
+                method: "PATCH",
+                body: JSON.stringify({
+                  id: product._id,
+                  name: form.name.value,
+                  increment: Number(form.increment.value),
+                  price: Number(form.price.value),
+                })
+              })
+              qty.innerText = `Available: ${data.product.available}`
+              total.innerText = `Total: ${data.product.total}`
+            })
+            list.appendChild(projectEl)
+          })
+        });
+    </script>
+    <fourb-header></fourb-header>
+    <div>Inventario</div>
+    <div id="inventory"></div>
+  </body>
+</html>

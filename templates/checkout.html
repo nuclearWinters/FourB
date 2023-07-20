@@ -26,7 +26,7 @@
           viewButton.onclick = () => {
             window.location.href = `/product-${product._id}`;
           }
-          viewButton.textContent = "VIEW"
+          viewButton.textContent = "VER"
           projectEl.appendChild(viewButton)
           list.appendChild(projectEl)
         })
@@ -34,28 +34,28 @@
     </script>
     <fourb-header></fourb-header>
     <p>
-      Products in cart
+      Carro de compras
     </p>
     <div id="products"></div>
     <form action="http://localhost:8000/checkout" method="POST" id="checkout">
-      <label for="name">Name</label>
-      <input id="name" name="name" type="text" />
+      <label for="name">Nombre</label>
+      <input id="name" name="name" type="text" required />
       <label for="apellidos">Apellidos</label>
-      <input id="apellidos" name="apellidos" type="text" />
+      <input id="apellidos" name="apellidos" type="text" required />
       <label for="street">Dirección</label>
-      <input id="street" name="street" type="text" />
+      <input id="street" name="street" type="text" required />
       <label for="country">Pais</label>
-      <input id="country" name="country" type="text" />
+      <input id="country" name="country" type="text" required />
       <label for="colonia">Colonia</label>
-      <input id="colonia" name="colonia" type="text" />
+      <input id="colonia" name="colonia" type="text" required />
       <label for="zip">Código Postal</label>
-      <input id="zip" name="zip" type="text" />
+      <input id="zip" name="zip" type="text" required />
       <label for="city">Ciudad</label>
-      <input id="city" name="city" type="text" />
+      <input id="city" name="city" type="text" required />
       <label for="state">Estado</label>
-      <input id="state" name="state" type="text" />
+      <input id="state" name="state" type="text" required />
       <label for="phone">Telefono</label>
-      <input id="phone" name="phone" type="text" />
+      <input id="phone" name="phone" type="text" required />
       <button type="submit">Pagar</button>
     </form>
     <script type="module">
@@ -78,46 +78,63 @@
       if (user) {
         const parsed = JSON.parse(user)
         if (parsed) {
-          console.log("parsed:", parsed)
-          if (parsed.addresses && parsed.default_address) {
-            const address = parsed.addresse.find(address => parsed.default_address === address._id)
-            if (address) {
-              const form = document.querySelector('#checkout')
-              const select = document.createElement('select')
-              parsed.addresses.forEach((address) => {
-                const option = document.createElement('option')
-                option.value = address._id
-                option.innerText = address.full_address
-                select.appendChild(option)
-              })
-              select.name = "address_id"
-              select.id = "address_id"
-              form.prepend(select)
-              const email = document.getElementById('email')
-              email.value = parsed.email
-              const name = document.getElementById('name')
-              name.value = address.name
-              const apellidos = document.getElementById('apellidos')
-              apellidos.value = address.apellidos
-              const street = document.getElementById('street')
-              street.value = address.street
-              const country = document.getElementById('country')
-              country.value = address.country
-              const state = document.getElementById('state')
-              state.value = address.state
-              const zip = document.getElementById('zip')
-              zip.value = address.zip
-              const city = document.getElementById('city')
-              city.value = address.city
-              const phone = document.getElementById('phone')
-              phone.value = address.phone
-              const colonia = document.getElementById('colonia')
-              colonia.value = address.colonia
+          const form = document.querySelector('#checkout')
+          if (parsed.email) {
+            const email = document.getElementById('email')
+            email.value = parsed.email
+          }
+          if (parsed.addresses) {
+            const select = document.createElement('select')
+            parsed.addresses.forEach((address) => {
+              const option = document.createElement('option')
+              option.value = address._id
+              option.innerText = address.full_address
+              select.appendChild(option)
+            })
+            select.name = "address_id"
+            select.id = "address_id"
+            const option = document.createElement('option')
+            form.prepend(select)
+            option.value = ""
+            option.innerText = "Usar nueva dirección"
+            const changeAddress = (address_id, addresses) => {
+              const address = parsed.addresses.find(address => address_id === address._id)
+              if (address) {
+                select.value = address._id
+                const name = document.getElementById('name')
+                name.value = address.name
+                const apellidos = document.getElementById('apellidos')
+                apellidos.value = address.apellidos
+                const street = document.getElementById('street')
+                street.value = address.street
+                const country = document.getElementById('country')
+                country.value = address.country
+                const state = document.getElementById('state')
+                state.value = address.state
+                const zip = document.getElementById('zip')
+                zip.value = address.zip
+                const city = document.getElementById('city')
+                city.value = address.city
+                const phone = document.getElementById('phone')
+                phone.value = address.phone
+                const colonia = document.getElementById('colonia')
+                colonia.value = address.colonia
+              }
+            }
+            const onChangeSelect = async (e) => {
+              const { value } = e.target
+              changeAddress(value, parsed.addresses)
+            }
+            select.addEventListener("change", onChangeSelect)
+            select.appendChild(option)
+            if (parsed.default_address) {
+              changeAddress(parsed.default_address, parsed.addresses)
             }
           }
         }
       } else if (session) {
         const parsed = JSON.parse(session)
+        console.log("parsed:", parsed)
         if (parsed) {
           const form = document.querySelector('#checkout')
           const email = document.getElementById('email')

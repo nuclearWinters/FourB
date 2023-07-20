@@ -1,20 +1,19 @@
 export const fetchWrapper = async (input = "", init = {}) => {
     const response = await fetch(input, {
-        headers: {
-            authorization: sessionStorage.getItem("accessToken"),
-            "Content-Type": "application/json"
-        },
-        ...init
+      headers: {
+        authorization: sessionStorage.getItem("accessToken"),
+        "Content-Type": "application/json"
+      },
+      ...init
     })
     const accessToken = response.headers.get("accessToken")
     const localAccessToken = sessionStorage.getItem("accessToken")
     if (accessToken && localAccessToken !== accessToken) {
       const payload = accessToken.split(".")[1]
-      const data = atob(payload)
-      const token = JSON.parse(data)
+      const base64 = atob(payload)
+      const tokenData = JSON.parse(base64)
       sessionStorage.setItem("accessToken", accessToken)
-      sessionStorage.setItem("refreshTokenExpireTime", token.refreshTokenExpireTime)
-      sessionStorage.setItem("user", JSON.stringify(token.user))
+      sessionStorage.setItem("refreshTokenExpireTime", tokenData.refreshTokenExpireTime)
       if (localAccessToken === null) {
         window.location.reload()
       }
@@ -29,6 +28,9 @@ export const fetchWrapper = async (input = "", init = {}) => {
     const data = await response.json()
     if (response.status !== 200) {
         throw new Error(data)
+    }
+    if (data.user) {
+      sessionStorage.setItem("user", JSON.stringify(data.user))
     }
     return data
 }
@@ -57,44 +59,49 @@ class Header extends HTMLElement {
 
   getInnerHTML = () => {
     const logged = sessionStorage.getItem("accessToken")
+    const user = sessionStorage.getItem("user")
+    const isAdmin = user ? JSON.parse(user).isAdmin : false
     return `<div class="header">
-      <button class="header-button" id="go-to-cart">Cart</button>
-      ${logged ? "" : `<button class="header-button" id="show-log-in">Log In</button>`}
-      ${logged ? "" : `<button class="header-button" id="show-register">Register</button>`}
-      ${logged ? `<button class="header-button" id="log-out">Log Out</button>` : ""}
+      <button class="header-button" id="go-to-cart">Carro de compras</button>
+      ${isAdmin ? "" : `<button class="header-button" id="inventory-header">Inventario</button>`}
+      ${logged ? "" : `<button class="header-button" id="show-log-in">Iniciar Sesión</button>`}
+      ${logged ? "" : `<button class="header-button" id="show-register">Registrarse</button>`}
+      ${logged ? `<button class="header-button" id="settings">Cuenta</button>` : ""}
+      ${logged ? `<button class="header-button" id="history">Historial</button>` : ""}
+      ${logged ? `<button class="header-button" id="log-out">Cerrar Sesión</button>` : ""}
       <div id="register-modal" class="auth-modal" style="display: none;">
         <form action="http://localhost:8000/register" class="auth-form" method="POST" id="form-register">
           <span id="close-register" class="close">x</span>
-          <div>Register</div>
+          <div>Registrarse</div>
           <label for="name">Nombre</label>
           <input type="text" name="name" required />
           <label for="apellidos">Apellidos</label>
           <input type="text" name="apellidos" required />
           <label for="email">Email</label>
           <input type="text" name="email" required />
-          <label for="text">Phone</label>
+          <label for="text">Teléfono</label>
           <div style="display: flex; flex-direction: row;">
             <select type="text" name="phonePrefix" required>
               <option value="+52">🇲🇽 Mexico (+52)</option>
             </selecy>
             <input type="text" name="phone" required />
           </div>
-          <label for="password">Password</label>
+          <label for="password">Contraseña</label>
           <input type="password" name="password" required />
-          <label for="password">Confirm Password</label>
+          <label for="password">Confirmar Contraseña</label>
           <input type="password" name="confirmPassword" required />
-          <button type="submit">Register</button>
+          <button type="submit">Registrarse</button>
         </form>
       </div>
       <div id="log-in-modal" class="auth-modal" style="display: none;">
         <form action="http://localhost:8000/log-in"class="auth-form" method="POST" id="form-log-in">
           <span id="close-log-in" class="close">x</span>
-          <div>Log in</div>
+          <div>Iniciar sesión</div>
           <label for="email">Email</label>
           <input type="text" name="email" required />
-          <label for="password">Password</label>
+          <label for="password">Contraseña</label>
           <input type="password" name="password" required />
-          <button type="submit">Log In</button>
+          <button type="submit">Iniciar Sesión</button>
         </form>
       </div>
     <div>`
@@ -151,13 +158,31 @@ class Header extends HTMLElement {
           })
           sessionStorage.clear()
           localStorage.clear()
-          window.location.href = "/main"
+          window.location.href = "/"
         }
       }
       const goToCart = document.getElementById("go-to-cart")
       if (goToCart) {
         goToCart.onclick = () => {
           window.location.href = "/cart"
+        }
+      }
+      const settings = document.getElementById("settings")
+      if (settings) {
+        settings.onclick = () => {
+          window.location.href = "/account"
+        }
+      }
+      const history = document.getElementById("history")
+      if (settings) {
+        history.onclick = () => {
+          window.location.href = "/history"
+        }
+      }
+      const inventoryButton = document.getElementById("inventory-header")
+      if (inventoryButton) {
+        inventoryButton.onclick = () => {
+          window.location.href = "/inventory-admin"
         }
       }
       const registerModal = document.getElementById("register-modal");
