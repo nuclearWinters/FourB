@@ -24,11 +24,18 @@
   cursor: pointer;
   font-size: 16px;
 }
-.header{
+.header {
   background: black;
   height: 60px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 20px;
+}
+.header button:nth-child(2) {
+  margin-left: auto;
+}
+.fourb-logo {
+  height: 46px;
+  margin-left: 30px;
 }

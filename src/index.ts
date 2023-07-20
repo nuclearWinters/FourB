@@ -1,7 +1,7 @@
 import fs from 'fs';
 import express from 'express'
 import { Collection, MongoClient, ObjectId } from "mongodb";
-import { MONGO_DB } from "./config";
+import { ACCESSSECRET, ACCESS_TOKEN_EXP_NUMBER, MONGO_DB, NODE_ENV, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, VIRTUAL_HOST } from "./config";
 import Handlebars from 'handlebars';
 import bcrypt from "bcryptjs"
 import jsonwebtoken, { SignOptions } from "jsonwebtoken"
@@ -14,12 +14,6 @@ const apikey = "key_pMkl11iWacZYSvetll0CaMc";
 const config = new Configuration({ accessToken: apikey });
 const customerClient = new CustomersApi(config);
 const orderClient = new OrdersApi(config);
-
-export const REFRESH_TOKEN_EXP_NUMBER = 900;
-export const ACCESS_TOKEN_EXP_NUMBER = 180;
-export const REFRESHSECRET = process.env.REFRESHSECRET || "REFRESHSECRET";
-export const ACCESSSECRET = process.env.ACCESSSECRET || "ACCESSSECRET";
-export const NODE_ENV = process.env.NODE_ENV || "development";
 
 class Context {
   static _bindings = new WeakMap<Request, Context>();
@@ -152,6 +146,7 @@ interface ContextLocals {
 interface UserJWT {
     _id: string;
     cart_id: string;
+    is_admin: boolean;
 }
 
 interface SessionCookie {
@@ -239,7 +234,8 @@ app.use((req, res, next) => {
               {
                 user: {
                     _id: payload.user._id,
-                    cart_id: payload.user.cart_id
+                    cart_id: payload.user.cart_id,
+                    is_admin: payload.user.is_admin,
                 },
                 refreshTokenExpireTime: payload.exp,
                 exp: accessTokenExpireTime > payload.exp ? payload.exp : accessTokenExpireTime,
@@ -501,6 +497,7 @@ app.post('/register', async (req, res) => {
             user: {
                 _id: user_id.toHexString(),
                 cart_id: cart_id.toHexString(),
+                is_admin: false,
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: refreshTokenExpireTime,
@@ -512,6 +509,7 @@ app.post('/register', async (req, res) => {
             user: {
                 _id: user_id.toHexString(),
                 cart_id: cart_id.toHexString(),
+                is_admin: false,
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: accessTokenExpireTime,
@@ -655,6 +653,7 @@ app.post('/log-in', async (req, res) => {
             user: {
                 _id: user._id.toHexString(),
                 cart_id: user.cart_id.toHexString(),
+                is_admin: user.is_admin,
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: refreshTokenExpireTime,
@@ -666,6 +665,7 @@ app.post('/log-in', async (req, res) => {
             user: {
                 _id: user._id.toHexString(),
                 cart_id: user.cart_id.toHexString(),
+                is_admin: user.is_admin,
             },
             refreshTokenExpireTime: refreshTokenExpireTime,
             exp: accessTokenExpireTime,
@@ -1352,6 +1352,14 @@ app.get('*', async (req, res) => {
             const template = fs.readFileSync(`static/main.html`, 'utf-8');
             return res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
         }
+        if (req.path.includes(".ico")) {
+            const template = fs.readFileSync(`static/${req.path}`, 'binary');
+            return res.status(200).set({ 'Content-Type': 'image/x-icon' }).end(template, 'binary');
+        }
+        if (req.path.includes(".png")) {
+            const template = fs.readFileSync(`static/${req.path}`, 'binary');
+            return res.status(200).set({ 'Content-Type': 'image/x-png' }).end(template, 'binary');
+        }
         if (req.path.includes(".js")) {
             const template = fs.readFileSync(`static/${req.path}`, 'utf-8');
             return res.status(200).set({ 'Content-Type': 'application/javascript' }).end(template);
@@ -1359,6 +1367,13 @@ app.get('*', async (req, res) => {
         if (req.path.includes(".css")) {
             const template = fs.readFileSync(`static/${req.path}`, 'utf-8');
             return res.status(200).set({ 'Content-Type': 'text/css' }).end(template);
+        }
+        if (req.path === "/inventory-admin") {
+            const ctx = Context.get(req);
+            console.log(ctx?.userJWT?.user)
+            if (!ctx?.userJWT?.user.is_admin) {
+                return res.redirect("/")
+            }
         }
         const template = fs.readFileSync(`static/${req.path}.html`, 'utf-8');
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
@@ -1368,10 +1383,11 @@ app.get('*', async (req, res) => {
 });
 
 //Define site pages
-//Update pages on demand
 //Promotions?
 //Cron job or mongo tasks?
 //Estilos
+//Keep session if active user
+//Keep cart if active user
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
@@ -1384,46 +1400,85 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
                 ...item,
                 price: (item.price / 100).toFixed(2),
                 buttonText: item.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: item.available ? "" : "disabled"
+                buttonProps: item.available ? "" : "disabled",
+                domain: VIRTUAL_HOST,
             });
             fs.writeFileSync(`static/product-${item._id}.html`, result)
         })
     });
     fs.readFile('templates/history.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/history.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/history.html`, result)
     });
     fs.readFile('templates/inventory-admin.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/inventory-admin.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/inventory-admin.html`, result)
     });
     fs.readFile('templates/main.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/main.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/main.html`, result)
     });
     fs.readFile('templates/cart.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/cart.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/cart.html`, result)
     });
     fs.readFile('templates/checkout.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/checkout.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/checkout.html`, result)
     });
     fs.readFile('templates/payment.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/payment.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/payment.html`, result)
     });
     fs.readFile('templates/account.html', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/account.html`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/account.html`, result)
     });
     fs.readFile('templates/main.js', 'utf8', async (err, html) => {
         if (err) throw err;
-        fs.writeFileSync(`static/main.js`, html)
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/main.js`, result)
     });
     fs.readFile('templates/main.css', 'utf8', async (err, html) => {
         if (err) throw err;
         fs.writeFileSync(`static/main.css`, html)
+    });
+    fs.copyFile('templates/favicon.ico', 'static/favicon.ico', async (err) => {
+        if (err) throw err;
+    });
+    fs.copyFile('templates/fourb.png', 'static/fourb.png', function (err) {
+        if (err) throw err
     });
     app.locals.users = db.collection("users")
     app.locals.cartsByUser = db.collection("carts_by_user")

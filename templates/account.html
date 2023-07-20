@@ -30,7 +30,7 @@
     </script>
     <fourb-header></fourb-header>
     <div>Account</div>
-    <form action="http://localhost:8000/user" method="PATCH" id="account">
+    <form action="https://{{domain}}/user" method="PATCH" id="account">
       <label for="name">Nombre</label>
       <input id="name" type="text" name="name" required />
       <label for="apellidos">Apellidos</label>
@@ -52,7 +52,7 @@
       const editAccount = async (e) => {
         e.preventDefault()
         try {
-          const data = await fetchWrapper("http://localhost:8000/user", {
+          const data = await fetchWrapper("https://{{domain}}/user", {
             method: 'PATCH',
             body: JSON.stringify({
               name: form.name.value,

@@ -93,17 +93,20 @@ class Header extends HTMLElement {
   getInnerHTML = () => {
     const logged = sessionStorage.getItem("accessToken")
     const user = sessionStorage.getItem("user")
-    const isAdmin = user ? JSON.parse(user).isAdmin : false
+    const isAdmin = user ? JSON.parse(user).is_admin : false
     return `<div class="header">
+      <a href="https://{{domain}}">
+        <img class="fourb-logo" src="https://{{domain}}/fourb.png" />
+      </a>
       <button class="header-button" id="go-to-cart">Carro de compras</button>
-      ${isAdmin ? "" : `<button class="header-button" id="inventory-header">Inventario</button>`}
+      ${isAdmin ? `<button class="header-button" id="inventory-header">Inventario</button>` : ""}
       ${logged ? "" : `<button class="header-button" id="show-log-in">Iniciar Sesión</button>`}
       ${logged ? "" : `<button class="header-button" id="show-register">Registrarse</button>`}
       ${logged ? `<button class="header-button" id="settings">Cuenta</button>` : ""}
       ${logged ? `<button class="header-button" id="history">Historial</button>` : ""}
       ${logged ? `<button class="header-button" id="log-out">Cerrar Sesión</button>` : ""}
       <div id="register-modal" class="auth-modal" style="display: none;">
-        <form action="http://localhost:8000/register" class="auth-form" method="POST" id="form-register">
+        <form action="https://{{domain}}/register" class="auth-form" method="POST" id="form-register">
           <span id="close-register" class="close">x</span>
           <div>Registrarse</div>
           <label for="name">Nombre</label>
@@ -127,7 +130,7 @@ class Header extends HTMLElement {
         </form>
       </div>
       <div id="log-in-modal" class="auth-modal" style="display: none;">
-        <form action="http://localhost:8000/log-in"class="auth-form" method="POST" id="form-log-in">
+        <form action="https://{{domain}}/log-in"class="auth-form" method="POST" id="form-log-in">
           <span id="close-log-in" class="close">x</span>
           <div>Iniciar sesión</div>
           <label for="email">Email</label>
@@ -144,7 +147,7 @@ class Header extends HTMLElement {
     const form = document.getElementById("form-log-in")
     e.preventDefault();
     try {
-      await fetchWrapper("http://localhost:8000/log-in", {
+      await fetchWrapper("https://{{domain}}/log-in", {
         method: 'POST',
         body: JSON.stringify({ email: form.email.value, password: form.password.value}),
       })
@@ -161,7 +164,7 @@ class Header extends HTMLElement {
     const form = document.getElementById("form-register")
     e.preventDefault();
     try {
-      await fetchWrapper("http://localhost:8000/register", {
+      await fetchWrapper("https://{{domain}}/register", {
         method: 'POST',
         body: JSON.stringify({
           name: form.name.value,
@@ -186,7 +189,7 @@ class Header extends HTMLElement {
       const logOutButton = document.getElementById("log-out")
       if (logOutButton) {
         logOutButton.onclick = async () => {
-          await fetchWrapper("http://localhost:8000/log-out", {
+          await fetchWrapper("https://{{domain}}/log-out", {
             method: 'POST',
           })
           sessionStorage.clear()

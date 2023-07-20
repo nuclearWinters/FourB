@@ -1,3 +1,4 @@
 /node_modules
 /data
 /static
+/loadbalancer/certs/*

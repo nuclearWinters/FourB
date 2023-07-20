@@ -7,7 +7,7 @@
   <body>
     <script type="module">
       import { fetchWrapper, toCurrency } from "./main.js"
-      fetchWrapper('http://localhost:8000/inventory')
+      fetchWrapper('https://{{domain}}/inventory')
         .then(json => {
           const list = document.querySelector('#inventory')
           json.forEach(product => {
@@ -67,7 +67,7 @@
             projectEl.appendChild(form)
             form.addEventListener("submit", async (e) => {
               e.preventDefault()
-              const data = await fetchWrapper("http://localhost:8000/inventory", {
+              const data = await fetchWrapper("https://{{domain}}/inventory", {
                 method: "PATCH",
                 body: JSON.stringify({
                   id: product._id,
@@ -86,7 +86,7 @@
     <fourb-header></fourb-header>
     <div>Inventario</div>
     <div>Crear producto</div>
-    <form method="POST" action="http://localhost:8000/inventory" id="create-product">
+    <form method="POST" action="https://{{domain}}/inventory" id="create-product">
       <label for="name">Nombre</label>
       <input id="name-product" name="name" required type="text" />
       <label for="name">Cantidad</label>
@@ -109,7 +109,7 @@
       const form = document.getElementById("create-product")
       form.addEventListener("submit", async (e) => {
         e.preventDefault()
-        await fetchWrapper("http://localhost:8000/inventory", {
+        await fetchWrapper("https://{{domain}}/inventory", {
           method: "POST",
           body: JSON.stringify({
             name: form.name.value,

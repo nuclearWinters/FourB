@@ -7,7 +7,7 @@
   <body>
     <script type="module">
       import { fetchWrapper } from "./main.js"
-      fetchWrapper('http://localhost:8000/purchases')
+      fetchWrapper('https://{{domain}}/purchases')
         .then(json => {
           const list = document.querySelector('#purchases')
           json.forEach(product => {
@@ -30,14 +30,14 @@
             const buyButton = document.createElement('button')
             buyButton.onclick = async () => {
               try {
-                const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+                const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
                   method: "POST",
                   body: JSON.stringify({
                     product_id: product._id,
                     qty: 1
                   })
                 })
-                alert("Added to cart")
+                alert("Añadido al carrito")
               } catch {
                 alert("Error")
               }

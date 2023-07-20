@@ -22,7 +22,7 @@
           onFinalizePayment: async (event) => {
             try {
               localStorage.removeItem("checkout_id")
-              await fetchWrapper('http://localhost:8000/confirmation', {
+              await fetchWrapper('https://{{domain}}/confirmation', {
                 method: "POST",
                 credentials: "include",
               })
@@ -46,7 +46,7 @@
     </form>
     <script type="module">
       import { fetchWrapper } from './main.js'
-      fetchWrapper('http://localhost:8000/add-to-cart')
+      fetchWrapper('https://{{domain}}/add-to-cart')
         .then(json => {
           const list = document.querySelector('#products')
           json.forEach((product, idx) => {

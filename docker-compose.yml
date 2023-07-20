@@ -12,6 +12,22 @@ services:
       - "8000:8000"
     depends_on:
       - mongo-fourb
+    environment:
+      - VIRTUAL_HOST=fourb.localhost
+
+  loadbalancer:
+    image: jwilder/nginx-proxy
+    depends_on:
+      - backend-ssg
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock
+      - ./loadbalancer/custom.conf:/etc/nginx/conf.d/custom.conf
+      - ./loadbalancer/certs:/etc/nginx/certs
+      - ./loadbalancer/dhparam:/etc/nginx/dhparam
+    logging:
+      driver: none
+    ports:
+      - '443:443'
 
   mongo-fourb:
     container_name: mongo-fourb

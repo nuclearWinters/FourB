@@ -7,7 +7,7 @@
   <body>
     <script type="module">
       import { fetchWrapper } from "./main.js"
-      fetchWrapper('http://localhost:8000/add-to-cart')
+      fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
         const list = document.querySelector('#products')
         json.forEach((product, idx) => {
@@ -37,7 +37,7 @@
       Carro de compras
     </p>
     <div id="products"></div>
-    <form action="http://localhost:8000/checkout" method="POST" id="checkout">
+    <form action="https://{{domain}}/checkout" method="POST" id="checkout">
       <label for="name">Nombre</label>
       <input id="name" name="name" type="text" required />
       <label for="apellidos">Apellidos</label>
@@ -162,7 +162,7 @@
       const checkoutSubmit = async (e) => {
         e.preventDefault();
         try {
-          const data = await fetchWrapper("http://localhost:8000/checkout", {
+          const data = await fetchWrapper("https://{{domain}}/checkout", {
             method: 'POST',
             body: JSON.stringify({
               name: form.name.value,

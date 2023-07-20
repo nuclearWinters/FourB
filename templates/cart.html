@@ -7,7 +7,7 @@
   <body>
     <script type="module">
       import { fetchWrapper } from "./main.js"
-      fetchWrapper('http://localhost:8000/add-to-cart')
+      fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
         const list = document.querySelector('#products')
         json.forEach((product, idx) => {
@@ -35,7 +35,7 @@
           buyButton.onclick = async () => {
             try {
               const input = document.getElementById(`${idx}-quantity`)
-              const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+              const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
                 method: "PATCH",
                 body: JSON.stringify({
                   item_by_cart_id: product._id,
@@ -43,7 +43,7 @@
                   qty: Number(input.value)
                 })
               })
-              alert("Item in cart updated")
+              alert("Producto actualizado en el carrito")
             } catch {
               alert("Error")
             }
@@ -53,7 +53,7 @@
           const deleteButton = document.createElement('button')
           deleteButton.onclick = async () => {
             try {
-              const data = await fetchWrapper('http://localhost:8000/add-to-cart', {
+              const data = await fetchWrapper('https://{{result}}/add-to-cart', {
                 method: "DELETE",
                 body: JSON.stringify({
                   item_by_cart_id: product._id,
@@ -61,7 +61,7 @@
               })
               const product = document.getElementById(`${idx}-product`)
               product.remove()
-              alert("Item removed")
+              alert("Producto eliminado con exito")
             } catch(e) {
               alert("Error")
             }
