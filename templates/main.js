@@ -108,36 +108,52 @@ class Header extends HTMLElement {
       <div id="register-modal" class="auth-modal" style="display: none;">
         <form action="https://{{domain}}/register" class="auth-form" method="POST" id="form-register">
           <span id="close-register" class="close">x</span>
-          <div>Registrarse</div>
-          <label for="name">Nombre</label>
-          <input type="text" name="name" required />
-          <label for="apellidos">Apellidos</label>
-          <input type="text" name="apellidos" required />
-          <label for="email">Email</label>
-          <input type="text" name="email" required />
-          <label for="text">Teléfono</label>
-          <div style="display: flex; flex-direction: row;">
-            <select type="text" name="phonePrefix" required>
-              <option value="+52">🇲🇽 Mexico (+52)</option>
-            </selecy>
-            <input type="text" name="phone" required />
+          <h2 class="title">Registrarse</h2>
+          <div class="input-container-modal">
+            <label for="name">Nombre</label>
+            <input type="text" name="name" required />
           </div>
-          <label for="password">Contraseña</label>
-          <input type="password" name="password" required />
-          <label for="password">Confirmar Contraseña</label>
-          <input type="password" name="confirmPassword" required />
-          <button type="submit">Registrarse</button>
+          <div class="input-container-modal">
+            <label for="apellidos">Apellidos</label>
+            <input type="text" name="apellidos" required />
+          </div>
+          <div class="input-container-modal">
+            <label for="email">Email</label>
+            <input type="text" name="email" required />
+          </div>
+          <div class="input-container-modal">
+            <label for="text">Teléfono</label>
+            <div style="display: flex; flex-direction: row;">
+              <select type="text" name="phonePrefix" required>
+                <option value="+52">🇲🇽 Mexico (+52)</option>
+              </selecy>
+              <input style="flex: 1;" type="text" name="phone" required />
+            </div>
+          </div>
+          <div class="input-container-modal">
+            <label for="password">Contraseña</label>
+            <input type="password" name="password" required />
+          </div>
+          <div class="input-container-modal">
+            <label for="password">Confirmar Contraseña</label>
+            <input type="password" name="confirmPassword" required />
+          </div>
+          <button class="fourb-button" type="submit">Registrarse</button>
         </form>
       </div>
       <div id="log-in-modal" class="auth-modal" style="display: none;">
         <form action="https://{{domain}}/log-in"class="auth-form" method="POST" id="form-log-in">
           <span id="close-log-in" class="close">x</span>
-          <div>Iniciar sesión</div>
-          <label for="email">Email</label>
-          <input type="text" name="email" required />
-          <label for="password">Contraseña</label>
-          <input type="password" name="password" required />
-          <button type="submit">Iniciar Sesión</button>
+          <h2 class="title">Iniciar sesión</h2>
+          <div class="input-container-modal">
+            <label for="email">Email</label>
+            <input type="text" name="email" required />
+          </div>
+          <div class="input-container-modal">
+            <label for="password">Contraseña</label>
+            <input type="password" name="password" required />
+          </div>
+          <button class="fourb-button" type="submit">Iniciar Sesión</button>
         </form>
       </div>
     <div>`

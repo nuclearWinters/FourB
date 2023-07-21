@@ -12,7 +12,10 @@
           const list = document.querySelector('#inventory')
           json.forEach(product => {
             const projectEl = document.createElement('div')
+            projectEl.className = "product-card"
             const form = document.createElement("form")
+            const inputContainerOne = document.createElement("div")
+            inputContainerOne.className = "input-container"
             const nameLabel = document.createElement('label')
             nameLabel.for = "name"
             nameLabel.innerText = "Nombre"
@@ -21,6 +24,10 @@
             nameInput.type = "text"
             nameInput.required = true
             nameInput.value = product.name
+            inputContainerOne.appendChild(nameLabel)
+            inputContainerOne.appendChild(nameInput)
+            const inputContainerTwo = document.createElement("div")
+            inputContainerTwo.className = "input-container"
             const priceLabel = document.createElement('label')
             priceLabel.for = "price"
             priceLabel.innerText = "Precio"
@@ -36,6 +43,10 @@
               const valueAsCurrency = toCurrency(e.target.value, '.')
               priceInput.value = valueAsCurrency
             }
+            inputContainerTwo.appendChild(priceLabel)
+            inputContainerTwo.appendChild(priceInput)
+            const inputContainerThree = document.createElement("div")
+            inputContainerThree.className = "input-container"
             const increaseLabel = document.createElement('label')
             increaseLabel.for = "increment"
             increaseLabel.innerText = "Añadir al inventario"
@@ -43,23 +54,26 @@
             increaseInput.name = "increment"
             increaseInput.type = "number"
             increaseInput.value = 0
+            inputContainerThree.appendChild(increaseLabel)
+            inputContainerThree.appendChild(increaseInput)
             const button = document.createElement("button")
             button.innerText = "Actualizar"
+            button.className = "fourb-button"
             const viewButton = document.createElement("button")
             viewButton.innerText = "Ver"
+            viewButton.className = "fourb-button"
             viewButton.onclick = () => {
               window.location.href = `/product-${product._id}`
             }
             const qty = document.createElement("div")
             qty.innerText = `Disponible: ${product.available}`
+            qty.className = "price"
             const total = document.createElement("div")
             total.innerText = `Total: ${product.total}`
-            form.appendChild(nameLabel)
-            form.appendChild(nameInput)
-            form.appendChild(priceLabel)
-            form.appendChild(priceInput)
-            form.appendChild(increaseLabel)
-            form.appendChild(increaseInput)
+            total.className = "price"
+            form.appendChild(inputContainerOne)
+            form.appendChild(inputContainerTwo)
+            form.appendChild(inputContainerThree)
             form.appendChild(qty)
             form.appendChild(total)
             form.appendChild(button)
@@ -84,26 +98,32 @@
         });
     </script>
     <fourb-header></fourb-header>
-    <div>Inventario</div>
-    <div>Crear producto</div>
+    <h2 class="title">Inventario</h2>
+    <h3 class="title">Crear producto</h3>
     <form method="POST" action="https://{{domain}}/inventory" id="create-product">
-      <label for="name">Nombre</label>
-      <input id="name-product" name="name" required type="text" />
-      <label for="name">Cantidad</label>
-      <input id="qty-product" name="qty" required type="number" />
-      <label for="name">Precio</label>
-      <input
-        id="currency"
-        type="number"
-        pattern="\d*"
-        step="any"
-        name="currency"
-        value="0.00"
-        required
-      />
-      <button type="submit">Crear</button>
+      <div class="input-container">
+        <label for="name">Nombre</label>
+        <input id="name-product" name="name" required type="text" />
+      </div>
+      <div class="input-container">
+        <label for="name">Cantidad</label>
+        <input id="qty-product" name="qty" required type="number" />
+      </div>
+      <div class="input-container">
+        <label for="name">Precio</label>
+        <input
+          id="currency"
+          type="number"
+          pattern="\d*"
+          step="any"
+          name="currency"
+          value="0.00"
+          required
+        />
+      </div>
+      <button class="fourb-button" type="submit">Crear</button>
     </form>
-    <div id="inventory"></div>
+    <div style="display: flex; justify-content: center; flex-wrap: wrap;" id="inventory"></div>
     <script type="module">
       import { fetchWrapper, toCurrency } from "./main.js"
       const form = document.getElementById("create-product")

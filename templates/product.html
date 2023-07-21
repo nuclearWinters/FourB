@@ -6,13 +6,13 @@
   <script type="module" src="main.js"></script>
   <body>
     <fourb-header></fourb-header>
-    <p>
+    <h3 class="name">
       {{name}}
-    </p>
-    <p>
+    </h3>
+    <div class="price">
       Precio: {{price}}
-    </p>
-    <button id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>
+    </div>
+    <button class="fourb-button" id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>
   </body>
   <script type="module">
     import { fetchWrapper } from './main.js'

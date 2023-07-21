@@ -29,22 +29,30 @@
       
     </script>
     <fourb-header></fourb-header>
-    <div>Account</div>
+    <h2 class="title">Account</h2>
     <form action="https://{{domain}}/user" method="PATCH" id="account">
-      <label for="name">Nombre</label>
-      <input id="name" type="text" name="name" required />
-      <label for="apellidos">Apellidos</label>
-      <input id="apellidos" type="text" name="apellidos" required />
-      <label for="email">Email</label>
-      <input id="email" type="text" name="email" required />
-      <label for="text">Phone</label>
-      <div style="display: flex; flex-direction: row;">
-        <select id="phonePrefix" type="text" name="phonePrefix" required>
-          <option value="+52">🇲🇽 Mexico (+52)</option>
-        </selecy>
-        <input id="phone" type="text" name="phone" required />
+      <div class="input-container">
+        <label for="name">Nombre</label>
+        <input id="name" type="text" name="name" required />
       </div>
-      <button type="submit">Actualizar</button>
+      <div class="input-container">
+        <label for="apellidos">Apellidos</label>
+        <input id="apellidos" type="text" name="apellidos" required />
+      </div>
+      <div class="input-container">
+        <label for="email">Email</label>
+        <input id="email" type="text" name="email" required />
+      </div>
+      <div class="input-container">
+        <label for="text">Phone</label>
+        <div style="display: flex; flex-direction: row;">
+          <select id="phonePrefix" type="text" name="phonePrefix" required>
+            <option value="+52">🇲🇽 Mexico (+52)</option>
+          </selecy>
+          <input id="phone" type="text" name="phone" required style="flex: 1;" />
+        </div>
+      </div>
+      <button class="fourb-button" type="submit">Actualizar</button>
     </form>
     <script type="module">
       import { fetchWrapper } from "./main.js"

@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser"
 import { CustomersApi, Configuration, OrdersApi } from 'conekta';
 import { Request } from 'express';
 import { AxiosError } from "axios"
+import cors from "cors"
 
 const apikey = "key_pMkl11iWacZYSvetll0CaMc";
 const config = new Configuration({ accessToken: apikey });
@@ -201,6 +202,10 @@ export const jwt = {
 
 const app = express()
 
+app.use(cors({
+    origin: ["https://fourb.localhost"]
+}))
+
 app.use(express.json())
 app.use(cookieParser())
 
@@ -344,7 +349,7 @@ app.post('/inventory', async (req, res) => {
                 available: qty,
                 total: qty,
                 name,
-                price: (price / 100).toFixed(2),
+                price: `$${(price / 100).toFixed(2)}`,
                 buttonText: qty ? "Añadir al carrito" : "Agotado",
                 buttonProps: qty ? "" : "disabled"
             });
@@ -423,7 +428,7 @@ app.patch('/inventory', async (req, res) => {
                 available: value.available,
                 total: value.total,
                 name: value.name,
-                price: (value.price / 100).toFixed(2),
+                price: `$${(value.price / 100).toFixed(2)}`,
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
                 buttonProps: value.available ? "" : "disabled"
             });
@@ -736,7 +741,7 @@ app.post('/add-to-cart', async (req, res) => {
                 available: value.available,
                 total: value.total,
                 name: value.name,
-                price: (value.price / 100).toFixed(2),
+                price: `$${(value.price / 100).toFixed(2)}`,
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
                 buttonProps: value.available ? "" : "disabled"
             });
@@ -861,7 +866,7 @@ app.patch('/add-to-cart', async (req, res) => {
                 available: value.available,
                 total: value.total,
                 name: value.name,
-                price: (value.price / 100).toFixed(2),
+                price: `$${(value.price / 100).toFixed(2)}`,
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
                 buttonProps: value.available ? "" : "disabled"
             });
@@ -981,7 +986,7 @@ app.delete('/add-to-cart', async (req, res) => {
                 available: value.available,
                 total: value.total,
                 name: value.name,
-                price: (value.price / 100).toFixed(2),
+                price: `$${(value.price / 100).toFixed(2)}`,
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
                 buttonProps: value.available ? "" : "disabled"
             });
@@ -1248,7 +1253,7 @@ app.post('/confirmation', async (req, res) => {
             const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
             const purchasedProducts = productsInCart.map(product => ({
                 name: product.name,
-                product_id: product._id,
+                product_id: product.product_id,
                 qty: product.qty,
                 price: product.price,
                 user_id: user_oid,
@@ -1384,10 +1389,11 @@ app.get('*', async (req, res) => {
 
 //Define site pages
 //Promotions?
-//Cron job or mongo tasks?
+//Set mongo cron tasks is better
 //Estilos
 //Keep session if active user
 //Keep cart if active user
+//Loading
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
@@ -1398,7 +1404,7 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
             const template = Handlebars.compile(html);
             const result = template({
                 ...item,
-                price: (item.price / 100).toFixed(2),
+                price: `$${(item.price / 100).toFixed(2)}`,
                 buttonText: item.available ? "Añadir al carrito" : "Agotado",
                 buttonProps: item.available ? "" : "disabled",
                 domain: VIRTUAL_HOST,

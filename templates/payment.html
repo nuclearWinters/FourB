@@ -55,7 +55,7 @@
             const name = document.createElement('div')
             name.textContent = product.name
             const price = document.createElement('div')
-            price.textContent = (product.price / 100).toFixed(2)
+            price.textContent = `$${(product.price / 100).toFixed(2)}`
             projectEl.appendChild(name)
             projectEl.appendChild(price)
             const quantity = document.createElement('div')

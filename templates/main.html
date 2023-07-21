@@ -12,20 +12,21 @@
           const list = document.querySelector('#products')
           json.forEach(product => {
             const projectEl = document.createElement('div')
+            projectEl.className = "product-card"
             const name = document.createElement('div')
             name.textContent = product.name
+            name.className = "name"
             const price = document.createElement('div')
-            price.textContent = (product.price / 100).toFixed(2)
-            const qty = document.createElement('div')
-            qty.textContent = product.qty
+            price.textContent = `$${(product.price / 100).toFixed(2)}`
+            price.className = "price"
             projectEl.appendChild(name)
             projectEl.appendChild(price)
-            projectEl.appendChild(qty)
             const viewButton = document.createElement('button')
             viewButton.onclick = () => {
               window.location.href = `/product-${product._id}`;
             }
             viewButton.textContent = "VER"
+            viewButton.className = "fourb-button"
             projectEl.appendChild(viewButton)
             const buyButton = document.createElement('button')
             buyButton.onclick = async () => {
@@ -43,13 +44,14 @@
               }
             }
             buyButton.textContent = "AÑADIR AL CARRITO"
+            buyButton.className = "fourb-button"
             projectEl.appendChild(buyButton)
             list.appendChild(projectEl)
           })
         });
     </script>
     <fourb-header></fourb-header>
-    <div>Productos</div>
-    <div id="products"></div>
+    <h2 class="title">Productos</h2>
+    <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
   </body>
 </html>

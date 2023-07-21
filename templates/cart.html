@@ -10,26 +10,48 @@
       fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
         const list = document.querySelector('#products')
+        const payButton = document.getElementById("pay-button")
+        if (payButton && !json.length) {
+          payButton.innerText = "Añadir productos al carrito"
+          payButton.onclick = () => {
+            window.location.href = "/"
+          }
+        }
+        const loading = document.getElementById("loading")
+        if (loading) {
+          loading.style.display = "none"
+        }
+        payButton.style.display = "block"
         json.forEach((product, idx) => {
           const projectEl = document.createElement('div')
+          projectEl.className = "product-card"
           projectEl.id = `${idx}-product`
           const name = document.createElement('div')
+          name.className = "name"
           name.textContent = product.name
           const price = document.createElement('div')
-          price.textContent = (product.price / 100).toFixed(2)
+          price.className = "price"
+          price.textContent = `$${(product.price / 100).toFixed(2)}`
           projectEl.appendChild(name)
           projectEl.appendChild(price)
+          const inputContainer = document.createElement("div")
+          inputContainer.className = "input-container"
+          const label = document.createElement('label')
+          label.innerText = "Cantidad"
           const input = document.createElement('input')
           input.type = "number"
           input.id = `${idx}-quantity`
           input.value = product.qty
           input.min = "1"
-          projectEl.appendChild(input)
+          inputContainer.appendChild(label)
+          inputContainer.appendChild(input)
+          projectEl.appendChild(inputContainer)
           const viewButton = document.createElement('button')
           viewButton.onclick = () => {
-            window.location.href = `/product-${product._id}`;
+            window.location.href = `/product-${product.product_id}`;
           }
           viewButton.textContent = "VER"
+          viewButton.className = "fourb-button"
           projectEl.appendChild(viewButton)
           const buyButton = document.createElement('button')
           buyButton.onclick = async () => {
@@ -49,6 +71,7 @@
             }
           }
           buyButton.textContent = "Actualizar cantidad"
+          buyButton.className = "fourb-button"
           projectEl.appendChild(buyButton)
           const deleteButton = document.createElement('button')
           deleteButton.onclick = async () => {
@@ -67,17 +90,19 @@
             }
           }
           deleteButton.textContent = "Eliminar producto"
+          deleteButton.className = "fourb-button"
           projectEl.appendChild(deleteButton)
           list.appendChild(projectEl)
         })
       });
     </script>
     <fourb-header></fourb-header>
-    <p>
+    <h2 class="title">
       Carro de compras
-    </p>
-    <div id="products"></div>
-    <button id="pay-button">Pagar</button>
+    </h2>
+    <div class="loading" id="loading"></div>
+    <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+    <button style="display: none;" class="fourb-button" id="pay-button">Pagar</button>
     <script type="module">
       const button = document.getElementById("pay-button")
       if (button) {
