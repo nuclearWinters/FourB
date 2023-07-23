@@ -283,7 +283,6 @@ app.use(async (req, res, next) => {
         }
         res.cookie("session", JSON.stringify(session), {
             secure: true,
-            httpOnly: true,
         })
         await Promise.all([
             sessions.insertOne(session),
@@ -1205,7 +1204,6 @@ app.post('/checkout', async (req, res) => {
             result.value.conekta_id = conekta_id
             res.cookie("session", JSON.stringify(result.value), {
                 secure: true,
-                httpOnly: true,
             })
             res.status(200).json({
                 checkout_id: order?.data?.checkout?.id
@@ -1363,7 +1361,6 @@ app.post('/confirmation', async (req, res) => {
             if (session.value) {
                 res.cookie("session", JSON.stringify(session.value), {
                     secure: true,
-                    httpOnly: true,
                 })
             }
             return res.status(200).json({
