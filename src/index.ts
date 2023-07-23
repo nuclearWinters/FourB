@@ -1,7 +1,7 @@
 import fs from 'fs';
 import express from 'express'
 import { Collection, MongoClient, ObjectId } from "mongodb";
-import { ACCESSSECRET, ACCESS_TOKEN_EXP_NUMBER, MONGO_DB, NODE_ENV, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, VIRTUAL_HOST } from "./config";
+import { ACCESSSECRET, ACCESS_TOKEN_EXP_NUMBER, MONGO_DB, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, VIRTUAL_HOST } from "./config";
 import Handlebars from 'handlebars';
 import bcrypt from "bcryptjs"
 import jsonwebtoken, { SignOptions } from "jsonwebtoken"
@@ -281,7 +281,10 @@ app.use(async (req, res, next) => {
             city: null,
             state: null
         }
-        res.cookie("session", JSON.stringify(session))
+        res.cookie("session", JSON.stringify(session), {
+            secure: true,
+            httpOnly: true,
+        })
         await Promise.all([
             sessions.insertOne(session),
             cartsByUser.insertOne({
@@ -528,7 +531,7 @@ app.post('/register', async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             expires: refreshTokenExpireDate,
-            secure: NODE_ENV === "production" ? true : false,
+            secure: true,
         });
         const userData = {
             _id: user_id,
@@ -684,7 +687,7 @@ app.post('/log-in', async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             expires: refreshTokenExpireDate,
-            secure: NODE_ENV === "production" ? true : false,
+            secure: true,
         });
         res.setHeader("accessToken", accessToken)
         res.status(200).json({
@@ -1200,7 +1203,10 @@ app.post('/checkout', async (req, res) => {
                 }
             })
             result.value.conekta_id = conekta_id
-            res.cookie("session", JSON.stringify(result.value))
+            res.cookie("session", JSON.stringify(result.value), {
+                secure: true,
+                httpOnly: true,
+            })
             res.status(200).json({
                 checkout_id: order?.data?.checkout?.id
             })
@@ -1296,7 +1302,7 @@ app.post('/confirmation', async (req, res) => {
             res.cookie("refreshToken", refreshToken, {
                 httpOnly: true,
                 expires: refreshTokenExpireDate,
-                secure: NODE_ENV === "production" ? true : false,
+                secure: true,
             });
             res.setHeader("accessToken", newAccessToken)
             return res.status(200).json({
@@ -1355,7 +1361,10 @@ app.post('/confirmation', async (req, res) => {
             }))
             await purchases.insertMany(purchasedProducts)
             if (session.value) {
-                res.cookie("session", JSON.stringify(session.value))
+                res.cookie("session", JSON.stringify(session.value), {
+                    secure: true,
+                    httpOnly: true,
+                })
             }
             return res.status(200).json({
                 user: null,

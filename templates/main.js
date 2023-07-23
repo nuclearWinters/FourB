@@ -4,6 +4,7 @@ export const fetchWrapper = async (input = "", init = {}) => {
       authorization: sessionStorage.getItem("accessToken"),
       "Content-Type": "application/json"
     },
+    credentials: "include",
     ...init
   })
   const accessToken = response.headers.get("accessToken")
