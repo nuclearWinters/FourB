@@ -753,7 +753,7 @@ app.post('/add-to-cart', async (req, res) => {
             fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
         });
         const expireDate = new Date()
-        expireDate.setHours(expireDate.getHours() + 1)
+        expireDate.setDate(expireDate.getDate() + 7)
         const reserved = await reservedInventory.updateOne({
             cart_id: cart_oid,
             product_id: product_oid,
@@ -895,7 +895,7 @@ app.patch('/add-to-cart', async (req, res) => {
             throw new Error("Item in cart not modified.")
         }
         const expireDate = new Date()
-        expireDate.setHours(expireDate.getHours() + 1)
+        expireDate.setDate(expireDate.getDate() + 7)
         const newReserved = await reservedInventory.insertOne(
             {
                 qty,
@@ -1438,7 +1438,7 @@ app.get('*', async (req, res) => {
 //Estilos aprobados
 //Keep session if active user?
 //Keep cart if active user
-//Find a framework or hybrid approach
+//Find a framework or hybrid approach?
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
