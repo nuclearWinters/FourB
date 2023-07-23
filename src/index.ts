@@ -12,13 +12,6 @@ import { AxiosError } from "axios"
 import cors from "cors"
 import cron from 'node-cron';
 
-cron.schedule('0 1 * * *', () => {
-    console.log('Running a job at 01:00 at America/Sao_Paulo timezone');
-}, {
-    scheduled: true,
-    timezone: "America/Sao_Paulo"
-});
-
 const apikey = "key_pMkl11iWacZYSvetll0CaMc";
 const config = new Configuration({ accessToken: apikey });
 const customerClient = new CustomersApi(config);
@@ -1436,11 +1429,10 @@ app.get('*', async (req, res) => {
 
 //Define site pages
 //Promotions?
-//Set mongo cron tasks is better
 //Estilos aprobados
 //Keep session if active user?
 //Keep cart if active user
-//Loading
+//Find a framework or hybrid approach
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
@@ -1540,6 +1532,31 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     app.locals.reservedInventory = db.collection("reserved_inventory")
     app.locals.sessions = db.collection("sessions")
     app.locals.purchases = db.collection("purchases")
+    cron.schedule('0 3 * * *', async () => {
+        const cartsByUser = db.collection<CartsByUserMongo>("carts_by_user")
+        const itemsByCart = db.collection<ItemsByCartMongo>("items_by_cart")
+        const inventory = db.collection<InventoryMongo>("inventory")
+        const reservedInventory = db.collection<ReservedInventoryMongo>("reserved_inventory")
+        const carts = await cartsByUser.find({ expireDate: { $ne: null } }).toArray()
+        const now = (new Date).getTime()
+        for (const cart of carts) {
+            if (cart?.expireDate) {
+                const cartExpireTime = cart.expireDate.getTime()
+                if (cartExpireTime < now) {
+                    const items = await itemsByCart.find({ cart_id: cart._id }).toArray()
+                    for (const item of items) {
+                        await inventory.updateOne({ _id: item.product_id }, { $inc: { available: item.qty } })
+                    }
+                    await itemsByCart.deleteMany({ cart_id: cart._id })
+                    await reservedInventory.deleteMany({ cart_id: cart._id })
+                    await cartsByUser.updateOne({ _id: cart._id }, { $set: { expireDate: null } })
+                }
+            }
+        }
+    }, {
+        scheduled: true,
+        timezone: "America/Cancun"
+    });
     app.listen(8000)
 })
 

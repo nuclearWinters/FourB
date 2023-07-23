@@ -1,85 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="main.css">
-  </head>
-  <script type="module" src="main.js"></script>
-  <script
-      type="module"
-      crossorigin
-      src="https://assets.conekta.com/component/2.0.2/assets/component.min.js"
-    ></script>
-    <script type="module" crossorigin defer>
-      import { fetchWrapper } from './main.js'
-      const checkout_id = localStorage.getItem("checkout_id")
-      if (checkout_id) {
-        const config = {
-          checkoutRequestId: checkout_id,
-          publicKey: 'key_FSmk9b0tZ8KedYKgLqOgerF',
-          targetIFrame: 'example',
-        };
-        const callbacks = {
-          onFinalizePayment: async (event) => {
-            try {
-              localStorage.removeItem("checkout_id")
-              await fetchWrapper('https://{{domain}}/confirmation', {
-                method: "POST",
-                credentials: "include",
-              })
-            } catch {}
-          },
-          onErrorPayment: (event) => {
-            alert("Error")
-          },
-        };
-        window.ConektaCheckoutComponents.Integration({ config, callbacks });
-      }
-    </script>
-  <body>
-    <fourb-header></fourb-header>
-    <h2 class="title">
-      Pago
-    </h2>
-    <div style="display: flex; flex-wrap: wrap; justify-content: center;" id="products"></div>
-    <form>
-      <div id="example" style="width: 500px; margin: 0 auto"></div>
-    </form>
-    <script type="module">
-      import { fetchWrapper } from './main.js'
-      fetchWrapper('https://{{domain}}/add-to-cart')
-        .then(json => {
-          const list = document.querySelector('#products')
-          let total = 0
-          json.forEach((product, idx) => {
-            const projectEl = document.createElement('div')
-            projectEl.className = "product-card"
-            projectEl.id = `${idx}-product`
-            const name = document.createElement('div')
-            name.textContent = product.name
-            name.className = "name"
-            const price = document.createElement('div')
-            price.className = "price"
-            price.textContent = `Precio unitario: $${(product.price / 100).toFixed(2)}`
-            projectEl.appendChild(name)
-            projectEl.appendChild(price)
-            const quantity = document.createElement('div')
-            quantity.innerText = `Cantidad: ${product.qty}`
-            quantity.className = "price"
-            projectEl.appendChild(quantity)
-            const totalItem = document.createElement('div')
-            totalItem.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
-            totalItem.className = "price"
-            projectEl.appendChild(totalItem)
-            const viewButton = document.createElement('button')
-            viewButton.onclick = () => {
-              window.location.href = `/product-${product._id}`;
-            }
-            viewButton.textContent = "VER"
-            viewButton.className = "fourb-button"
-            projectEl.appendChild(viewButton)
-            list.appendChild(projectEl)
+
+<head>
+  <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+<script type="module" crossorigin src="https://assets.conekta.com/component/2.0.2/assets/component.min.js"></script>
+<script type="module" crossorigin defer>
+  import { fetchWrapper } from './main.js'
+  const checkout_id = localStorage.getItem("checkout_id")
+  if (checkout_id) {
+    const config = {
+      checkoutRequestId: checkout_id,
+      publicKey: 'key_FSmk9b0tZ8KedYKgLqOgerF',
+      targetIFrame: 'example',
+    };
+    const callbacks = {
+      onFinalizePayment: async (event) => {
+        try {
+          localStorage.removeItem("checkout_id")
+          await fetchWrapper('https://{{domain}}/confirmation', {
+            method: "POST",
+            credentials: "include",
           })
-        });
+        } catch { }
+      },
+      onErrorPayment: (event) => {
+        alert("Error")
+      },
+    };
+    window.ConektaCheckoutComponents.Integration({ config, callbacks });
+  }
+</script>
+
+<body>
+  <fourb-header></fourb-header>
+  <h2 class="title">
+    Pago
+  </h2>
+  <div id="total"></div>
+  <div class="loading" id="loading"></div>
+  <div style="display: flex; flex-wrap: wrap; justify-content: center;" id="products"></div>
+  <form>
+    <div id="example" style="width: 500px; margin: 0 auto"></div>
+  </form>
+  <script type="module">
+    import { fetchWrapper } from './main.js'
+    fetchWrapper('https://{{domain}}/add-to-cart')
+      .then(json => {
+        if (!json.length) {
+          return window.location.href = "/"
+        }
+        const loading = document.getElementById("loading")
+        if (loading) {
+          loading.style.display = "none"
+        }
+        const list = document.querySelector('#products')
+        let total = 0
+        json.forEach((product, idx) => {
+          const projectEl = document.createElement('div')
+          projectEl.className = "product-card"
+          projectEl.id = `${idx}-product`
+          const name = document.createElement('div')
+          name.textContent = product.name
+          name.className = "name"
+          const price = document.createElement('div')
+          price.className = "price"
+          price.textContent = `Precio unitario: $${(product.price / 100).toFixed(2)}`
+          projectEl.appendChild(name)
+          projectEl.appendChild(price)
+          const quantity = document.createElement('div')
+          quantity.innerText = `Cantidad: ${product.qty}`
+          quantity.className = "price"
+          projectEl.appendChild(quantity)
+          const totalItem = document.createElement('div')
+          totalItem.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
+          totalItem.className = "price"
+          projectEl.appendChild(totalItem)
+          const viewButton = document.createElement('button')
+          viewButton.onclick = () => {
+            window.location.href = `/product-${product.product_id}`;
+          }
+          viewButton.textContent = "VER"
+          viewButton.className = "fourb-button"
+          projectEl.appendChild(viewButton)
+          list.appendChild(projectEl)
+          total += product.price * product.qty
+        })
+        const totalItem = document.getElementById('total')
+        totalItem.className = "price"
+        totalItem.innerText = `Total: $${(total / 100).toFixed(2)}`
+      });
   </script>
-  </body>
+</body>
+
 </html>

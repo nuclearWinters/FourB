@@ -1,151 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="main.css">
-  </head>
-  <script type="module" src="main.js"></script>
-  <body>
-    <script type="module">
-      import { fetchWrapper, toCurrency } from "./main.js"
-      fetchWrapper('https://{{domain}}/inventory')
-        .then(json => {
-          const list = document.querySelector('#inventory')
-          json.forEach(product => {
-            const projectEl = document.createElement('div')
-            projectEl.className = "product-card"
-            const form = document.createElement("form")
-            const inputContainerOne = document.createElement("div")
-            inputContainerOne.className = "input-container"
-            const nameLabel = document.createElement('label')
-            nameLabel.for = "name"
-            nameLabel.innerText = "Nombre"
-            const nameInput = document.createElement('input')
-            nameInput.name = "name"
-            nameInput.type = "text"
-            nameInput.required = true
-            nameInput.value = product.name
-            inputContainerOne.appendChild(nameLabel)
-            inputContainerOne.appendChild(nameInput)
-            const inputContainerTwo = document.createElement("div")
-            inputContainerTwo.className = "input-container"
-            const priceLabel = document.createElement('label')
-            priceLabel.for = "price"
-            priceLabel.innerText = "Precio"
-            const priceInput = document.createElement('input')
-            priceInput.name = "price"
-            priceInput.type = "number"
-            priceInput.required = true
-            priceInput.value = toCurrency(String(product.price), '.')
-            priceInput.id = "currency"
-            priceInput.pattern = "\d*"
-            priceInput.step = "any"
-            priceInput.oninput = (e) => {
-              const valueAsCurrency = toCurrency(e.target.value, '.')
-              priceInput.value = valueAsCurrency
-            }
-            inputContainerTwo.appendChild(priceLabel)
-            inputContainerTwo.appendChild(priceInput)
-            const inputContainerThree = document.createElement("div")
-            inputContainerThree.className = "input-container"
-            const increaseLabel = document.createElement('label')
-            increaseLabel.for = "increment"
-            increaseLabel.innerText = "Añadir al inventario"
-            const increaseInput = document.createElement('input')
-            increaseInput.name = "increment"
-            increaseInput.type = "number"
-            increaseInput.value = 0
-            inputContainerThree.appendChild(increaseLabel)
-            inputContainerThree.appendChild(increaseInput)
-            const button = document.createElement("button")
-            button.innerText = "Actualizar"
-            button.className = "fourb-button"
-            const viewButton = document.createElement("button")
-            viewButton.innerText = "Ver"
-            viewButton.className = "fourb-button"
-            viewButton.onclick = () => {
-              window.location.href = `/product-${product._id}`
-            }
-            const qty = document.createElement("div")
-            qty.innerText = `Disponible: ${product.available}`
-            qty.className = "price"
-            const total = document.createElement("div")
-            total.innerText = `Total: $${product.total}`
-            total.className = "price"
-            form.appendChild(inputContainerOne)
-            form.appendChild(inputContainerTwo)
-            form.appendChild(inputContainerThree)
-            form.appendChild(qty)
-            form.appendChild(total)
-            form.appendChild(button)
-            form.appendChild(viewButton)
-            projectEl.appendChild(form)
-            form.addEventListener("submit", async (e) => {
-              e.preventDefault()
-              const data = await fetchWrapper("https://{{domain}}/inventory", {
-                method: "PATCH",
-                body: JSON.stringify({
-                  id: product._id,
-                  name: form.name.value,
-                  increment: Number(form.increment.value),
-                  price: Number(form.price.value) * 100,
-                })
-              })
-              qty.innerText = `Available: ${data.product.available}`
-              total.innerText = `Total: $${data.product.total}`
-            })
-            list.appendChild(projectEl)
-          })
-        });
-    </script>
-    <fourb-header></fourb-header>
-    <h2 class="title">Inventario</h2>
-    <h3 class="title">Crear producto</h3>
-    <form method="POST" action="https://{{domain}}/inventory" id="create-product">
-      <div class="input-container">
-        <label for="name">Nombre</label>
-        <input id="name-product" name="name" required type="text" />
-      </div>
-      <div class="input-container">
-        <label for="name">Cantidad</label>
-        <input id="qty-product" name="qty" required type="number" />
-      </div>
-      <div class="input-container">
-        <label for="name">Precio</label>
-        <input
-          id="currency"
-          type="number"
-          pattern="\d*"
-          step="any"
-          name="currency"
-          value="0.00"
-          required
-        />
-      </div>
-      <button class="fourb-button" type="submit">Crear</button>
-    </form>
-    <div style="display: flex; justify-content: center; flex-wrap: wrap;" id="inventory"></div>
-    <script type="module">
-      import { fetchWrapper, toCurrency } from "./main.js"
-      const form = document.getElementById("create-product")
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault()
-        await fetchWrapper("https://{{domain}}/inventory", {
-          method: "POST",
-          body: JSON.stringify({
-            name: form.name.value,
-            qty: Number(form.qty.value),
-            price: Number(form.currency.value) * 100
-          })
-        })
-        form.reset()
-      })
-      const input = document.getElementById("currency")
-      if (input) {
-        input.oninput = (e) => {
-          const valueAsCurrency = toCurrency(e.target.value, '.')
-          input.value = valueAsCurrency
+
+<head>
+  <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+
+<body>
+  <script type="module">
+    import { fetchWrapper, toCurrency } from "./main.js"
+    fetchWrapper('https://{{domain}}/inventory')
+      .then(json => {
+        const loading = document.getElementById("loading")
+        if (loading) {
+          loading.style.display = "none"
         }
+        const list = document.querySelector('#inventory')
+        json.forEach(product => {
+          const projectEl = document.createElement('div')
+          projectEl.className = "product-card"
+          const form = document.createElement("form")
+          const inputContainerOne = document.createElement("div")
+          inputContainerOne.className = "input-container"
+          const nameLabel = document.createElement('label')
+          nameLabel.for = "name"
+          nameLabel.innerText = "Nombre"
+          const nameInput = document.createElement('input')
+          nameInput.name = "name"
+          nameInput.type = "text"
+          nameInput.required = true
+          nameInput.value = product.name
+          inputContainerOne.appendChild(nameLabel)
+          inputContainerOne.appendChild(nameInput)
+          const inputContainerTwo = document.createElement("div")
+          inputContainerTwo.className = "input-container"
+          const priceLabel = document.createElement('label')
+          priceLabel.for = "price"
+          priceLabel.innerText = "Precio"
+          const priceInput = document.createElement('input')
+          priceInput.name = "price"
+          priceInput.type = "number"
+          priceInput.required = true
+          priceInput.value = toCurrency(String(product.price), '.')
+          priceInput.id = "currency"
+          priceInput.pattern = "\d*"
+          priceInput.step = "any"
+          priceInput.oninput = (e) => {
+            const valueAsCurrency = toCurrency(e.target.value, '.')
+            priceInput.value = valueAsCurrency
+          }
+          inputContainerTwo.appendChild(priceLabel)
+          inputContainerTwo.appendChild(priceInput)
+          const inputContainerThree = document.createElement("div")
+          inputContainerThree.className = "input-container"
+          const increaseLabel = document.createElement('label')
+          increaseLabel.for = "increment"
+          increaseLabel.innerText = "Añadir al inventario"
+          const increaseInput = document.createElement('input')
+          increaseInput.name = "increment"
+          increaseInput.type = "number"
+          increaseInput.value = 0
+          inputContainerThree.appendChild(increaseLabel)
+          inputContainerThree.appendChild(increaseInput)
+          const button = document.createElement("button")
+          button.innerText = "Actualizar"
+          button.className = "fourb-button"
+          const viewButton = document.createElement("button")
+          viewButton.innerText = "Ver"
+          viewButton.className = "fourb-button"
+          viewButton.onclick = () => {
+            window.location.href = `/product-${product._id}`
+          }
+          const qty = document.createElement("div")
+          qty.innerText = `Disponible: ${product.available}`
+          qty.className = "price"
+          const total = document.createElement("div")
+          total.innerText = `Total: $${product.total}`
+          total.className = "price"
+          form.appendChild(inputContainerOne)
+          form.appendChild(inputContainerTwo)
+          form.appendChild(inputContainerThree)
+          form.appendChild(qty)
+          form.appendChild(total)
+          form.appendChild(button)
+          form.appendChild(viewButton)
+          projectEl.appendChild(form)
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault()
+            const data = await fetchWrapper("https://{{domain}}/inventory", {
+              method: "PATCH",
+              body: JSON.stringify({
+                id: product._id,
+                name: form.name.value,
+                increment: Number(form.increment.value),
+                price: Number(form.price.value) * 100,
+              })
+            })
+            qty.innerText = `Available: ${data.product.available}`
+            total.innerText = `Total: $${data.product.total}`
+          })
+          list.appendChild(projectEl)
+        })
+      });
+  </script>
+  <fourb-header></fourb-header>
+  <h2 class="title">Inventario</h2>
+  <h3 class="title">Crear producto</h3>
+  <form method="POST" action="https://{{domain}}/inventory" id="create-product">
+    <div class="input-container">
+      <label for="name">Nombre</label>
+      <input id="name-product" name="name" required type="text" />
+    </div>
+    <div class="input-container">
+      <label for="name">Cantidad</label>
+      <input id="qty-product" name="qty" required type="number" />
+    </div>
+    <div class="input-container">
+      <label for="name">Precio</label>
+      <input id="currency" type="number" pattern="\d*" step="any" name="currency" value="0.00" required />
+    </div>
+    <button class="fourb-button" type="submit">Crear</button>
+  </form>
+  <div class="loading" id="loading"></div>
+  <div style="display: flex; justify-content: center; flex-wrap: wrap;" id="inventory"></div>
+  <script type="module">
+    import { fetchWrapper, toCurrency } from "./main.js"
+    const form = document.getElementById("create-product")
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault()
+      await fetchWrapper("https://{{domain}}/inventory", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.name.value,
+          qty: Number(form.qty.value),
+          price: Number(form.currency.value) * 100
+        })
+      })
+      form.reset()
+    })
+    const input = document.getElementById("currency")
+    if (input) {
+      input.oninput = (e) => {
+        const valueAsCurrency = toCurrency(e.target.value, '.')
+        input.value = valueAsCurrency
       }
-    </script>
-  </body>
+    }
+  </script>
+</body>
+
 </html>

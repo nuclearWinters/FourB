@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="main.css">
-  </head>
-  <script type="module" src="main.js"></script>
-  <body>
-    <script type="module">
-      import { fetchWrapper } from "./main.js"
-      fetchWrapper('https://{{domain}}/add-to-cart')
+
+<head>
+  <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+
+<body>
+  <script type="module">
+    import { fetchWrapper } from "./main.js"
+    fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
+        if (!json.length) {
+          return window.location.href = "/"
+        }
+        const loading = document.getElementById("loading")
+        if (loading) {
+          loading.style.display = "none"
+        }
         const list = document.querySelector('#products')
         json.forEach((product, idx) => {
           const projectEl = document.createElement('div')
@@ -26,7 +35,7 @@
           quantity.innerText = `Quantity: ${product.qty}`
           quantity.className = "price"
           projectEl.appendChild(quantity)
-          const total= document.createElement('div')
+          const total = document.createElement('div')
           total.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
           total.className = "price"
           projectEl.appendChild(total)
@@ -40,223 +49,225 @@
           list.appendChild(projectEl)
         })
       });
-    </script>
-    <fourb-header></fourb-header>
-    <h2 class="title">
-      Revisión
-    </h2>
-    <div style="display: flex; flex-wrap: wrap; justify-content: center;" id="products"></div>
-    <form action="https://{{domain}}/checkout" method="POST" id="checkout">
-      <div class="input-container">
-        <label for="name">Nombre</label>
-        <input id="name" name="name" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="apellidos">Apellidos</label>
-        <input id="apellidos" name="apellidos" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="street">Dirección</label>
-        <input id="street" name="street" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="country">País</label>
-        <select style="font-size: 20px;" id="country" name="country" required value="">
-          <option value="">Select</option>
-          <option value="MX">🇲🇽 Mexico</option>
-        </select>
-      </div>
-      <div class="input-container">
-        <label for="colonia">Colonia</label>
-        <input id="colonia" name="colonia" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="zip">Código Postal</label>
-        <input id="zip" name="zip" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="city">Ciudad</label>
-        <input id="city" name="city" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="state">Estado</label>
-        <input id="state" name="state" type="text" required />
-      </div>
-      <div class="input-container">
-        <label for="text">Telefono</label>
-        <div style="display: flex; flex-direction: row;">
-          <select id="phonePrefix" type="text" name="phonePrefix" required>
-            <option value="+52">🇲🇽 Mexico (+52)</option>
+  </script>
+  <fourb-header></fourb-header>
+  <h2 class="title">
+    Revisión
+  </h2>
+  <div class="loading" id="loading"></div>
+  <div style="display: flex; flex-wrap: wrap; justify-content: center;" id="products"></div>
+  <form action="https://{{domain}}/checkout" method="POST" id="checkout">
+    <div class="input-container">
+      <label for="name">Nombre</label>
+      <input id="name" name="name" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="apellidos">Apellidos</label>
+      <input id="apellidos" name="apellidos" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="street">Dirección</label>
+      <input id="street" name="street" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="country">País</label>
+      <select style="font-size: 20px;" id="country" name="country" required value="">
+        <option value="">Select</option>
+        <option value="MX">🇲🇽 Mexico</option>
+      </select>
+    </div>
+    <div class="input-container">
+      <label for="colonia">Colonia</label>
+      <input id="colonia" name="colonia" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="zip">Código Postal</label>
+      <input id="zip" name="zip" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="city">Ciudad</label>
+      <input id="city" name="city" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="state">Estado</label>
+      <input id="state" name="state" type="text" required />
+    </div>
+    <div class="input-container">
+      <label for="text">Telefono</label>
+      <div style="display: flex; flex-direction: row;">
+        <select id="phonePrefix" type="text" name="phonePrefix" required>
+          <option value="+52">🇲🇽 Mexico (+52)</option>
           </selecy>
           <input id="phone" type="text" name="phone" required style="flex: 1;" />
-        </div>
       </div>
-      <button class="fourb-button" type="submit">Pagar</button>
-    </form>
-    <script type="module">
-      import { getCookie, fetchWrapper } from "./main.js"
-      const accessToken = sessionStorage.getItem("accessToken")
-      if (!accessToken) {
+    </div>
+    <button class="fourb-button" type="submit">Pagar</button>
+  </form>
+  <script type="module">
+    import { getCookie, fetchWrapper } from "./main.js"
+    const accessToken = sessionStorage.getItem("accessToken")
+    if (!accessToken) {
+      const form = document.querySelector('#checkout')
+      const input = document.createElement('input')
+      input.type = "text"
+      input.name = "email"
+      input.id = "email"
+      const label = document.createElement('label')
+      label.for = "email"
+      label.innerText = "Email"
+      const inputContainer = document.createElement('div')
+      inputContainer.className = "input-container"
+      inputContainer.appendChild(label)
+      inputContainer.appendChild(input)
+      form.prepend(inputContainer)
+    }
+    const session = getCookie("session")
+    const user = sessionStorage.getItem("user")
+    if (user) {
+      const parsed = JSON.parse(user)
+      if (parsed) {
         const form = document.querySelector('#checkout')
-        const input = document.createElement('input')
-        input.type = "text"
-        input.name = "email"
-        input.id = "email"
-        const label = document.createElement('label')
-        label.for = "email"
-        label.innerText = "Email"
-        const inputContainer = document.createElement('div')
-        inputContainer.className = "input-container"
-        inputContainer.appendChild(label)
-        inputContainer.appendChild(input)
-        form.prepend(inputContainer)
-      }
-      const session = getCookie("session")
-      const user = sessionStorage.getItem("user")
-      if (user) {
-        const parsed = JSON.parse(user)
-        if (parsed) {
-          const form = document.querySelector('#checkout')
-          if (parsed.addresses) {
-            const select = document.createElement('select')
-            select.style.fontSize = "20px"
-            parsed.addresses.forEach((address) => {
-              const option = document.createElement('option')
-              option.value = address._id
-              option.innerText = address.full_address
-              select.appendChild(option)
-            })
-            select.name = "address_id"
-            select.id = "address_id"
+        if (parsed.addresses) {
+          const select = document.createElement('select')
+          select.style.fontSize = "20px"
+          parsed.addresses.forEach((address) => {
             const option = document.createElement('option')
-            const inputContainer = document.createElement('div')
-            inputContainer.className = "input-container"
-            const labelAddresses = document.createElement('label')
-            labelAddresses.innerText = "Direcciones guardadas"
-            inputContainer.append(labelAddresses)
-            inputContainer.append(select)
-            form.prepend(inputContainer)
-            option.value = ""
-            option.innerText = "Usar nueva dirección"
-            const changeAddress = (address_id, addresses) => {
-              if (!address_id) {
-                select.value = ""
-                const name = document.getElementById('name')
-                name.value = ""
-                const apellidos = document.getElementById('apellidos')
-                apellidos.value = ""
-                const street = document.getElementById('street')
-                street.value = ""
-                const country = document.getElementById('country')
-                country.value = ""
-                const state = document.getElementById('state')
-                state.value = ""
-                const zip = document.getElementById('zip')
-                zip.value = ""
-                const city = document.getElementById('city')
-                city.value = ""
-                const phone = document.getElementById('phone')
-                phone.value = ""
-                const colonia = document.getElementById('colonia')
-                colonia.value = ""
-                return
-              }
-              const address = parsed.addresses.find(address => address_id === address._id)
-              if (address) {
-                select.value = address._id
-                const name = document.getElementById('name')
-                name.value = address.name
-                const apellidos = document.getElementById('apellidos')
-                apellidos.value = address.apellidos
-                const street = document.getElementById('street')
-                street.value = address.street
-                const country = document.getElementById('country')
-                country.value = address.country
-                const state = document.getElementById('state')
-                state.value = address.state
-                const zip = document.getElementById('zip')
-                zip.value = address.zip
-                const city = document.getElementById('city')
-                city.value = address.city
-                const phone = document.getElementById('phone')
-                phone.value = address.phone
-                const colonia = document.getElementById('colonia')
-                colonia.value = address.colonia
-              }
-            }
-            const onChangeSelect = async (e) => {
-              const { value } = e.target
-              changeAddress(value, parsed.addresses)
-            }
-            select.addEventListener("change", onChangeSelect)
+            option.value = address._id
+            option.innerText = address.full_address
             select.appendChild(option)
-            if (parsed.default_address) {
-              changeAddress(parsed.default_address, parsed.addresses)
+          })
+          select.name = "address_id"
+          select.id = "address_id"
+          const option = document.createElement('option')
+          const inputContainer = document.createElement('div')
+          inputContainer.className = "input-container"
+          const labelAddresses = document.createElement('label')
+          labelAddresses.innerText = "Direcciones guardadas"
+          inputContainer.append(labelAddresses)
+          inputContainer.append(select)
+          form.prepend(inputContainer)
+          option.value = ""
+          option.innerText = "Usar nueva dirección"
+          const changeAddress = (address_id, addresses) => {
+            if (!address_id) {
+              select.value = ""
+              const name = document.getElementById('name')
+              name.value = ""
+              const apellidos = document.getElementById('apellidos')
+              apellidos.value = ""
+              const street = document.getElementById('street')
+              street.value = ""
+              const country = document.getElementById('country')
+              country.value = ""
+              const state = document.getElementById('state')
+              state.value = ""
+              const zip = document.getElementById('zip')
+              zip.value = ""
+              const city = document.getElementById('city')
+              city.value = ""
+              const phone = document.getElementById('phone')
+              phone.value = ""
+              const colonia = document.getElementById('colonia')
+              colonia.value = ""
+              return
+            }
+            const address = parsed.addresses.find(address => address_id === address._id)
+            if (address) {
+              select.value = address._id
+              const name = document.getElementById('name')
+              name.value = address.name
+              const apellidos = document.getElementById('apellidos')
+              apellidos.value = address.apellidos
+              const street = document.getElementById('street')
+              street.value = address.street
+              const country = document.getElementById('country')
+              country.value = address.country
+              const state = document.getElementById('state')
+              state.value = address.state
+              const zip = document.getElementById('zip')
+              zip.value = address.zip
+              const city = document.getElementById('city')
+              city.value = address.city
+              const phone = document.getElementById('phone')
+              phone.value = address.phone
+              const colonia = document.getElementById('colonia')
+              colonia.value = address.colonia
             }
           }
-        }
-      } else if (session) {
-        const parsed = JSON.parse(session)
-        if (parsed) {
-          const form = document.querySelector('#checkout')
-          const email = document.getElementById('email')
-          email.value = parsed.email
-          const name = document.getElementById('name')
-          name.value = parsed.name
-          const apellidos = document.getElementById('apellidos')
-          apellidos.value = parsed.apellidos
-          const street = document.getElementById('street')
-          street.value = parsed.street
-          const country = document.getElementById('country')
-          country.value = parsed.country
-          const state = document.getElementById('state')
-          state.value = parsed.state
-          const zip = document.getElementById('zip')
-          zip.value = parsed.zip
-          const city = document.getElementById('city')
-          city.value = parsed.city
-          const phone = document.getElementById('phone')
-          phone.value = parsed.phone
-          const phonePrefix = document.getElementById('phonePrefix')
-          phonePrefix.value = parsed.phonePrefix
-          const colonia = document.getElementById('colonia')
-          colonia.value = parsed.colonia
-        }
-      }
-      const form = document.getElementById('checkout')
-      const checkoutSubmit = async (e) => {
-        e.preventDefault();
-        try {
-          const data = await fetchWrapper("https://{{domain}}/checkout", {
-            method: 'POST',
-            body: JSON.stringify({
-              name: form.name.value,
-              apellidos: form.apellidos.value,
-              street: form.street.value,
-              country: form.country.value,
-              colonia: form.colonia.value,
-              zip: form.zip.value,
-              city: form.city.value,
-              state: form.state.value,
-              phone: form.phone.value,
-              phone_prefix: form.phonePrefix.value,
-              email: form?.email?.value,
-              address_id: form?.address_id?.value,
-            }),
-          })
-          if (data.checkout_id) {
-            localStorage.setItem("checkout_id", data.checkout_id)
+          const onChangeSelect = async (e) => {
+            const { value } = e.target
+            changeAddress(value, parsed.addresses)
           }
-          window.location.href = "/payment"
-        } catch(e) {
-          if (e instanceof Error) {
-            alert(e.message)
-          } else {
-            alert("Error")
+          select.addEventListener("change", onChangeSelect)
+          select.appendChild(option)
+          if (parsed.default_address) {
+            changeAddress(parsed.default_address, parsed.addresses)
           }
         }
       }
-      form.addEventListener("submit", checkoutSubmit)
-    </script>
-  </body>
+    } else if (session) {
+      const parsed = JSON.parse(session)
+      if (parsed) {
+        const form = document.querySelector('#checkout')
+        const email = document.getElementById('email')
+        email.value = parsed.email
+        const name = document.getElementById('name')
+        name.value = parsed.name
+        const apellidos = document.getElementById('apellidos')
+        apellidos.value = parsed.apellidos
+        const street = document.getElementById('street')
+        street.value = parsed.street
+        const country = document.getElementById('country')
+        country.value = parsed.country
+        const state = document.getElementById('state')
+        state.value = parsed.state
+        const zip = document.getElementById('zip')
+        zip.value = parsed.zip
+        const city = document.getElementById('city')
+        city.value = parsed.city
+        const phone = document.getElementById('phone')
+        phone.value = parsed.phone
+        const phonePrefix = document.getElementById('phonePrefix')
+        phonePrefix.value = parsed.phonePrefix
+        const colonia = document.getElementById('colonia')
+        colonia.value = parsed.colonia
+      }
+    }
+    const form = document.getElementById('checkout')
+    const checkoutSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const data = await fetchWrapper("https://{{domain}}/checkout", {
+          method: 'POST',
+          body: JSON.stringify({
+            name: form.name.value,
+            apellidos: form.apellidos.value,
+            street: form.street.value,
+            country: form.country.value,
+            colonia: form.colonia.value,
+            zip: form.zip.value,
+            city: form.city.value,
+            state: form.state.value,
+            phone: form.phone.value,
+            phone_prefix: form.phonePrefix.value,
+            email: form?.email?.value,
+            address_id: form?.address_id?.value,
+          }),
+        })
+        if (data.checkout_id) {
+          localStorage.setItem("checkout_id", data.checkout_id)
+        }
+        window.location.href = "/payment"
+      } catch (e) {
+        if (e instanceof Error) {
+          alert(e.message)
+        } else {
+          alert("Error")
+        }
+      }
+    }
+    form.addEventListener("submit", checkoutSubmit)
+  </script>
+</body>
+
 </html>

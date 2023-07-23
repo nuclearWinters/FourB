@@ -1,57 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="main.css">
-  </head>
-  <script type="module" src="main.js"></script>
-  <body>
-    <script type="module">
-      import { fetchWrapper } from "./main.js"
-      fetchWrapper('https://{{domain}}/inventory')
-        .then(json => {
-          const list = document.querySelector('#products')
-          json.forEach(product => {
-            const projectEl = document.createElement('div')
-            projectEl.className = "product-card"
-            const name = document.createElement('div')
-            name.textContent = product.name
-            name.className = "name"
-            const price = document.createElement('div')
-            price.textContent = `$${(product.price / 100).toFixed(2)}`
-            price.className = "price"
-            projectEl.appendChild(name)
-            projectEl.appendChild(price)
-            const viewButton = document.createElement('button')
-            viewButton.onclick = () => {
-              window.location.href = `/product-${product._id}`;
-            }
-            viewButton.textContent = "VER"
-            viewButton.className = "fourb-button"
-            projectEl.appendChild(viewButton)
-            const buyButton = document.createElement('button')
-            buyButton.onclick = async () => {
-              try {
-                const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
-                  method: "POST",
-                  body: JSON.stringify({
-                    product_id: product._id,
-                    qty: 1
-                  })
+
+<head>
+  <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+
+<body>
+  <script type="module">
+    import { fetchWrapper } from "./main.js"
+    fetchWrapper('https://{{domain}}/inventory')
+      .then(json => {
+        const loading = document.getElementById("loading")
+        if (loading) {
+          loading.style.display = "none"
+        }
+        const list = document.querySelector('#products')
+        json.forEach(product => {
+          const projectEl = document.createElement('div')
+          projectEl.className = "product-card"
+          const name = document.createElement('div')
+          name.textContent = product.name
+          name.className = "name"
+          const price = document.createElement('div')
+          price.textContent = `$${(product.price / 100).toFixed(2)}`
+          price.className = "price"
+          projectEl.appendChild(name)
+          projectEl.appendChild(price)
+          const viewButton = document.createElement('button')
+          viewButton.onclick = () => {
+            window.location.href = `/product-${product._id}`;
+          }
+          viewButton.textContent = "VER"
+          viewButton.className = "fourb-button"
+          projectEl.appendChild(viewButton)
+          const buyButton = document.createElement('button')
+          buyButton.onclick = async () => {
+            try {
+              const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
+                method: "POST",
+                body: JSON.stringify({
+                  product_id: product._id,
+                  qty: 1
                 })
-                alert("Añadido al carrito")
-              } catch {
-                alert("Error")
-              }
+              })
+              alert("Añadido al carrito")
+            } catch {
+              alert("Error")
             }
-            buyButton.textContent = "AÑADIR AL CARRITO"
-            buyButton.className = "fourb-button"
-            projectEl.appendChild(buyButton)
-            list.appendChild(projectEl)
-          })
-        });
-    </script>
-    <fourb-header></fourb-header>
-    <h2 class="title">Productos</h2>
-    <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
-  </body>
+          }
+          buyButton.textContent = "AÑADIR AL CARRITO"
+          buyButton.className = "fourb-button"
+          projectEl.appendChild(buyButton)
+          list.appendChild(projectEl)
+        })
+      });
+  </script>
+  <fourb-header></fourb-header>
+  <h2 class="title">Productos</h2>
+  <div class="loading" id="loading"></div>
+  <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+</body>
+
 </html>
