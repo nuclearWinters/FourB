@@ -2,3 +2,5 @@
 /data
 /static
 /loadbalancer/certs/*
+/build
+Archivo.zip

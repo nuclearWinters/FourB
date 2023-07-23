@@ -23,8 +23,6 @@ class Context {
     public userJWT: DecodeJWT | null = null;
     public sessionCookie: SessionCookie | null = null;
 
-    constructor() { }
-
     static bind(req: Request): void {
         const ctx = new Context();
         Context._bindings.set(req, ctx);
@@ -1071,7 +1069,7 @@ app.post('/checkout', async (req, res) => {
             if (!result.value) {
                 throw new Error("No user updated")
             }
-            const { password, ...user } = result.value
+            const user = result.value
             const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
             const order = await orderClient.createOrder({
                 currency: "MXN",
@@ -1089,7 +1087,10 @@ app.post('/checkout', async (req, res) => {
                 }
             })
             return res.status(200).json({
-                user,
+                user: {
+                    ...user,
+                    password: undefined,
+                },
                 checkout_id: order?.data?.checkout?.id
             })
         } else if (ctx?.userJWT) {
@@ -1125,7 +1126,7 @@ app.post('/checkout', async (req, res) => {
             if (!result.value) {
                 throw new Error("No user updated")
             }
-            const { password, ...user } = result.value
+            const user = result.value
             const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
             const order = await orderClient.createOrder({
                 currency: "MXN",
@@ -1143,7 +1144,10 @@ app.post('/checkout', async (req, res) => {
                 }
             })
             return res.status(200).json({
-                user,
+                user: {
+                    ...user,
+                    password: undefined
+                },
                 checkout_id: order?.data?.checkout?.id
             })
         } else {
@@ -1438,7 +1442,12 @@ app.get('*', async (req, res) => {
 //Estilos aprobados
 //Keep session if active user?
 //Keep cart if active user
-//Find a framework or hybrid approach?
+//Find a framework or hybrid approach? No, too much boilerplate
+//Images
+//Responsive
+//SEO
+//Search
+//Pagination
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
