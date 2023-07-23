@@ -60,8 +60,11 @@
         <input id="street" name="street" type="text" required />
       </div>
       <div class="input-container">
-        <label for="country">Pais</label>
-        <input id="country" name="country" type="text" required />
+        <label for="country">País</label>
+        <select style="font-size: 20px;" id="country" name="country" required value="">
+          <option value="">Select</option>
+          <option value="MX">🇲🇽 Mexico</option>
+        </select>
       </div>
       <div class="input-container">
         <label for="colonia">Colonia</label>
@@ -80,8 +83,13 @@
         <input id="state" name="state" type="text" required />
       </div>
       <div class="input-container">
-        <label for="phone">Telefono</label>
-        <input id="phone" name="phone" type="text" required />
+        <label for="text">Telefono</label>
+        <div style="display: flex; flex-direction: row;">
+          <select id="phonePrefix" type="text" name="phonePrefix" required>
+            <option value="+52">🇲🇽 Mexico (+52)</option>
+          </selecy>
+          <input id="phone" type="text" name="phone" required style="flex: 1;" />
+        </div>
       </div>
       <button class="fourb-button" type="submit">Pagar</button>
     </form>
@@ -109,12 +117,7 @@
         const parsed = JSON.parse(user)
         if (parsed) {
           const form = document.querySelector('#checkout')
-          if (parsed.email) {
-            const email = document.getElementById('email')
-            email.value = parsed.email
-          }
           if (parsed.addresses) {
-            
             const select = document.createElement('select')
             select.style.fontSize = "20px"
             parsed.addresses.forEach((address) => {
@@ -214,6 +217,8 @@
           city.value = parsed.city
           const phone = document.getElementById('phone')
           phone.value = parsed.phone
+          const phonePrefix = document.getElementById('phonePrefix')
+          phonePrefix.value = parsed.phonePrefix
           const colonia = document.getElementById('colonia')
           colonia.value = parsed.colonia
         }
@@ -234,7 +239,8 @@
               city: form.city.value,
               state: form.state.value,
               phone: form.phone.value,
-              email: form.email.value,
+              phone_prefix: form.phonePrefix.value,
+              email: form?.email?.value,
               address_id: form?.address_id?.value,
             }),
           })

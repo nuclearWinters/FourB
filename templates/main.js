@@ -1,38 +1,38 @@
 export const fetchWrapper = async (input = "", init = {}) => {
-    const response = await fetch(input, {
-      headers: {
-        authorization: sessionStorage.getItem("accessToken"),
-        "Content-Type": "application/json"
-      },
-      ...init
-    })
-    const accessToken = response.headers.get("accessToken")
-    const localAccessToken = sessionStorage.getItem("accessToken")
-    if (accessToken && localAccessToken !== accessToken) {
-      const payload = accessToken.split(".")[1]
-      const base64 = atob(payload)
-      const tokenData = JSON.parse(base64)
-      sessionStorage.setItem("accessToken", accessToken)
-      sessionStorage.setItem("refreshTokenExpireTime", tokenData.refreshTokenExpireTime)
-      if (localAccessToken === null) {
-        window.location.reload()
-      }
-    } else if (!accessToken) {
-      sessionStorage.removeItem("accessToken")
-      sessionStorage.removeItem("refreshTokenExpireTime")
-      sessionStorage.removeItem("user")
-      if (localAccessToken) {
-        window.location.reload()
-      }
+  const response = await fetch(input, {
+    headers: {
+      authorization: sessionStorage.getItem("accessToken"),
+      "Content-Type": "application/json"
+    },
+    ...init
+  })
+  const accessToken = response.headers.get("accessToken")
+  const localAccessToken = sessionStorage.getItem("accessToken")
+  if (accessToken && localAccessToken !== accessToken) {
+    const payload = accessToken.split(".")[1]
+    const base64 = atob(payload)
+    const tokenData = JSON.parse(base64)
+    sessionStorage.setItem("accessToken", accessToken)
+    sessionStorage.setItem("refreshTokenExpireTime", tokenData.refreshTokenExpireTime)
+    if (localAccessToken === null) {
+      window.location.reload()
     }
-    const data = await response.json()
-    if (response.status !== 200) {
-        throw new Error(data)
+  } else if (!accessToken) {
+    sessionStorage.removeItem("accessToken")
+    sessionStorage.removeItem("refreshTokenExpireTime")
+    sessionStorage.removeItem("user")
+    if (localAccessToken) {
+      window.location.reload()
     }
-    if (data?.user) {
-      sessionStorage.setItem("user", JSON.stringify(data.user))
-    }
-    return data
+  }
+  const data = await response.json()
+  if (response.status !== 200) {
+    throw new Error(data)
+  }
+  if (data?.user) {
+    sessionStorage.setItem("user", JSON.stringify(data.user))
+  }
+  return data
 }
 
 const getDigitsFromValue = (value = "") =>
@@ -72,7 +72,7 @@ export const getCookie = (cname) => {
   let name = cname + "=";
   let decodedCookie = decodeURIComponent(document.cookie);
   let ca = decodedCookie.split(';');
-  for(let i = 0; i <ca.length; i++) {
+  for (let i = 0; i < ca.length; i++) {
     let c = ca[i];
     while (c.charAt(0) == ' ') {
       c = c.substring(1);
@@ -165,9 +165,9 @@ class Header extends HTMLElement {
     try {
       await fetchWrapper("https://{{domain}}/log-in", {
         method: 'POST',
-        body: JSON.stringify({ email: form.email.value, password: form.password.value}),
+        body: JSON.stringify({ email: form.email.value, password: form.password.value }),
       })
-    } catch(e) {
+    } catch (e) {
       if (e instanceof Error) {
         alert(e.message)
       } else {
@@ -192,7 +192,7 @@ class Header extends HTMLElement {
           phonePrefix: form.phonePrefix.value
         }),
       })
-    } catch(e) {
+    } catch (e) {
       if (e instanceof Error) {
         alert(e.message)
       } else {
@@ -201,89 +201,89 @@ class Header extends HTMLElement {
     }
   }
 
-    assignFunctions() {
-      const logOutButton = document.getElementById("log-out")
-      if (logOutButton) {
-        logOutButton.onclick = async () => {
-          await fetchWrapper("https://{{domain}}/log-out", {
-            method: 'POST',
-          })
-          sessionStorage.clear()
-          localStorage.clear()
-          window.location.href = "/"
-        }
-      }
-      const goToCart = document.getElementById("go-to-cart")
-      if (goToCart) {
-        goToCart.onclick = () => {
-          window.location.href = "/cart"
-        }
-      }
-      const settings = document.getElementById("settings")
-      if (settings) {
-        settings.onclick = () => {
-          window.location.href = "/account"
-        }
-      }
-      const history = document.getElementById("history")
-      if (settings) {
-        history.onclick = () => {
-          window.location.href = "/history"
-        }
-      }
-      const inventoryButton = document.getElementById("inventory-header")
-      if (inventoryButton) {
-        inventoryButton.onclick = () => {
-          window.location.href = "/inventory-admin"
-        }
-      }
-      const registerModal = document.getElementById("register-modal");
-      const showRegister = document.getElementById("show-register");
-      const closeRegister = document.getElementById("close-register");
-      if (showRegister) {
-        showRegister.onclick = () => {
-          registerModal.style.display = "flex";
-        }
-      }
-      if (closeRegister) {
-        closeRegister.onclick = () => {
-          registerModal.style.display = "none";
-        }
-      }
-      const logInModal = document.getElementById("log-in-modal");
-      const showLogIn = document.getElementById("show-log-in");
-      const closeLogIn = document.getElementById("close-log-in");
-      if (showLogIn) {
-        showLogIn.onclick = () => {
-          logInModal.style.display = "flex";
-        }
-      }
-      if (closeLogIn) {
-        closeLogIn.onclick = () => {
-          logInModal.style.display = "none";
-        }
-      }
-      window.onclick = (event) => {
-        if (event.target == logInModal) {
-          logInModal.style.display = "none";
-        }
-        if (event.target == registerModal) {
-          registerModal.style.display = "none";
-        }
-      }
-      const formLogIn = document.getElementById("form-log-in")
-      if (formLogIn) {
-        formLogIn.addEventListener("submit", this.logInSubmit)
-      }
-      const formRegister = document.getElementById("form-register")
-      if (formRegister) {
-        formRegister.addEventListener("submit", this.registerSubmit)
+  assignFunctions() {
+    const logOutButton = document.getElementById("log-out")
+    if (logOutButton) {
+      logOutButton.onclick = async () => {
+        await fetchWrapper("https://{{domain}}/log-out", {
+          method: 'POST',
+        })
+        sessionStorage.clear()
+        localStorage.clear()
+        window.location.href = "/"
       }
     }
+    const goToCart = document.getElementById("go-to-cart")
+    if (goToCart) {
+      goToCart.onclick = () => {
+        window.location.href = "/cart"
+      }
+    }
+    const settings = document.getElementById("settings")
+    if (settings) {
+      settings.onclick = () => {
+        window.location.href = "/account"
+      }
+    }
+    const history = document.getElementById("history")
+    if (settings) {
+      history.onclick = () => {
+        window.location.href = "/history"
+      }
+    }
+    const inventoryButton = document.getElementById("inventory-header")
+    if (inventoryButton) {
+      inventoryButton.onclick = () => {
+        window.location.href = "/inventory-admin"
+      }
+    }
+    const registerModal = document.getElementById("register-modal");
+    const showRegister = document.getElementById("show-register");
+    const closeRegister = document.getElementById("close-register");
+    if (showRegister) {
+      showRegister.onclick = () => {
+        registerModal.style.display = "flex";
+      }
+    }
+    if (closeRegister) {
+      closeRegister.onclick = () => {
+        registerModal.style.display = "none";
+      }
+    }
+    const logInModal = document.getElementById("log-in-modal");
+    const showLogIn = document.getElementById("show-log-in");
+    const closeLogIn = document.getElementById("close-log-in");
+    if (showLogIn) {
+      showLogIn.onclick = () => {
+        logInModal.style.display = "flex";
+      }
+    }
+    if (closeLogIn) {
+      closeLogIn.onclick = () => {
+        logInModal.style.display = "none";
+      }
+    }
+    window.onclick = (event) => {
+      if (event.target == logInModal) {
+        logInModal.style.display = "none";
+      }
+      if (event.target == registerModal) {
+        registerModal.style.display = "none";
+      }
+    }
+    const formLogIn = document.getElementById("form-log-in")
+    if (formLogIn) {
+      formLogIn.addEventListener("submit", this.logInSubmit)
+    }
+    const formRegister = document.getElementById("form-register")
+    if (formRegister) {
+      formRegister.addEventListener("submit", this.registerSubmit)
+    }
+  }
 
-    connectedCallback() {
-      this.assignFunctions()
-    }
+  connectedCallback() {
+    this.assignFunctions()
+  }
 }
 
 window.customElements.define('fourb-header', Header);

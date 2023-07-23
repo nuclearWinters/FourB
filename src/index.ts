@@ -10,6 +10,14 @@ import { CustomersApi, Configuration, OrdersApi } from 'conekta';
 import { Request } from 'express';
 import { AxiosError } from "axios"
 import cors from "cors"
+import cron from 'node-cron';
+
+cron.schedule('0 1 * * *', () => {
+    console.log('Running a job at 01:00 at America/Sao_Paulo timezone');
+}, {
+    scheduled: true,
+    timezone: "America/Sao_Paulo"
+});
 
 const apikey = "key_pMkl11iWacZYSvetll0CaMc";
 const config = new Configuration({ accessToken: apikey });
@@ -17,21 +25,21 @@ const customerClient = new CustomersApi(config);
 const orderClient = new OrdersApi(config);
 
 class Context {
-  static _bindings = new WeakMap<Request, Context>();
-  
-  public userJWT: DecodeJWT | null = null;
-  public sessionCookie: SessionCookie | null = null;
-   
-  constructor () {}
-    
-  static bind(req: Request) : void {
-    const ctx = new Context();
-    Context._bindings.set(req, ctx);
-  }
-    
-  static get(req: Request) : Context | null {
-    return Context._bindings.get(req) || null;
-  }
+    static _bindings = new WeakMap<Request, Context>();
+
+    public userJWT: DecodeJWT | null = null;
+    public sessionCookie: SessionCookie | null = null;
+
+    constructor() { }
+
+    static bind(req: Request): void {
+        const ctx = new Context();
+        Context._bindings.set(req, ctx);
+    }
+
+    static get(req: Request): Context | null {
+        return Context._bindings.get(req) || null;
+    }
 }
 
 interface UserMongo {
@@ -59,6 +67,7 @@ interface AddressUser {
     city: string;
     state: string;
     phone: string;
+    phone_prefix: string;
     name: string;
     apellidos: string;
 }
@@ -104,7 +113,7 @@ interface InventoryMongo {
 interface ItemsByCartMongo {
     _id?: ObjectId;
     product_id: ObjectId,
-    cart_id: ObjectId, 
+    cart_id: ObjectId,
     qty: number;
     price: number;
     name: string;
@@ -172,14 +181,14 @@ export interface DecodeJWT {
 
 export const jwt = {
     decode: (token: string): string | DecodeJWT | null => {
-      const decoded = jsonwebtoken.decode(token);
-      return decoded as string | DecodeJWT | null;
+        const decoded = jsonwebtoken.decode(token);
+        return decoded as string | DecodeJWT | null;
     },
     verify: (token: string, password: string): DecodeJWT | null => {
         try {
             const payload = jsonwebtoken.verify(token, password);
             if (typeof payload === "string") {
-              throw new Error("payload is not string")
+                throw new Error("payload is not string")
             }
             return payload as DecodeJWT;
         } catch {
@@ -187,18 +196,18 @@ export const jwt = {
         }
     },
     sign: (
-      data: {
-        user: UserJWT;
-        refreshTokenExpireTime: number;
-        exp: number;
-      },
-      secret: string,
-      options?: SignOptions
+        data: {
+            user: UserJWT;
+            refreshTokenExpireTime: number;
+            exp: number;
+        },
+        secret: string,
+        options?: SignOptions
     ): string => {
-      const token = jsonwebtoken.sign(data, secret, options);
-      return token;
+        const token = jsonwebtoken.sign(data, secret, options);
+        return token;
     },
-  };
+};
 
 const app = express()
 
@@ -237,16 +246,16 @@ app.use((req, res, next) => {
             now.setMilliseconds(0);
             const accessTokenExpireTime = now.getTime() / 1000 + ACCESS_TOKEN_EXP_NUMBER;
             const newAccessToken = jwt.sign(
-              {
-                user: {
-                    _id: payload.user._id,
-                    cart_id: payload.user.cart_id,
-                    is_admin: payload.user.is_admin,
+                {
+                    user: {
+                        _id: payload.user._id,
+                        cart_id: payload.user.cart_id,
+                        is_admin: payload.user.is_admin,
+                    },
+                    refreshTokenExpireTime: payload.exp,
+                    exp: accessTokenExpireTime > payload.exp ? payload.exp : accessTokenExpireTime,
                 },
-                refreshTokenExpireTime: payload.exp,
-                exp: accessTokenExpireTime > payload.exp ? payload.exp : accessTokenExpireTime,
-              },
-              ACCESSSECRET
+                ACCESSSECRET
             );
             res.setHeader("accessToken", newAccessToken)
             if (ctx) {
@@ -357,7 +366,7 @@ app.post('/inventory', async (req, res) => {
             fs.writeFileSync(`static/product-${inventoryResult.insertedId}.html`, result)
         });
         res.status(200).json("OK!")
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -398,23 +407,23 @@ app.patch('/inventory', async (req, res) => {
                 $gte: -increment
             }
         },
-        {
-            ...(increment ? {
-                $inc: {
-                    available: increment,
-                    total: increment,
-                }
-            } : {}),
-            ...((name || price) ? {
-                $set: {
-                    ...(name ? { name } : {}),
-                    ...(price ? { price } : {})
-                }
-            } : {})
-        },
-        {
-            returnDocument: "after",
-        })
+            {
+                ...(increment ? {
+                    $inc: {
+                        available: increment,
+                        total: increment,
+                    }
+                } : {}),
+                ...((name || price) ? {
+                    $set: {
+                        ...(name ? { name } : {}),
+                        ...(price ? { price } : {})
+                    }
+                } : {})
+            },
+            {
+                returnDocument: "after",
+            })
         const { value } = result
         if (!value) {
             throw new Error("Not enough inventory or product not found")
@@ -438,7 +447,7 @@ app.patch('/inventory', async (req, res) => {
         res.status(200).json({
             product: result.value
         })
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -487,7 +496,7 @@ app.post('/register', async (req, res) => {
         if (user) throw new Error("El email ya esta siendo usado.");
         const [customer, hash_password] = await Promise.all([
             customerClient.createCustomer({
-                name: `${name} ${apellidos}` ,
+                name: `${name} ${apellidos}`,
                 email,
                 phone: phonePrefix + phone,
             }),
@@ -499,34 +508,34 @@ app.post('/register', async (req, res) => {
         const refreshTokenExpireTime = nowTime + REFRESH_TOKEN_EXP_NUMBER;
         const accessTokenExpireTime = nowTime + ACCESS_TOKEN_EXP_NUMBER;
         const refreshToken = jwt.sign(
-          {
-            user: {
-                _id: user_id.toHexString(),
-                cart_id: cart_id.toHexString(),
-                is_admin: false,
+            {
+                user: {
+                    _id: user_id.toHexString(),
+                    cart_id: cart_id.toHexString(),
+                    is_admin: false,
+                },
+                refreshTokenExpireTime: refreshTokenExpireTime,
+                exp: refreshTokenExpireTime,
             },
-            refreshTokenExpireTime: refreshTokenExpireTime,
-            exp: refreshTokenExpireTime,
-          },
-          REFRESHSECRET
+            REFRESHSECRET
         );
         const accessToken = jwt.sign(
-          {
-            user: {
-                _id: user_id.toHexString(),
-                cart_id: cart_id.toHexString(),
-                is_admin: false,
+            {
+                user: {
+                    _id: user_id.toHexString(),
+                    cart_id: cart_id.toHexString(),
+                    is_admin: false,
+                },
+                refreshTokenExpireTime: refreshTokenExpireTime,
+                exp: accessTokenExpireTime,
             },
-            refreshTokenExpireTime: refreshTokenExpireTime,
-            exp: accessTokenExpireTime,
-          },
-          ACCESSSECRET
+            ACCESSSECRET
         );
         const refreshTokenExpireDate = new Date(refreshTokenExpireTime * 1000);
         res.cookie("refreshToken", refreshToken, {
-          httpOnly: true,
-          expires: refreshTokenExpireDate,
-          secure: NODE_ENV === "production" ? true : false,
+            httpOnly: true,
+            expires: refreshTokenExpireDate,
+            secure: NODE_ENV === "production" ? true : false,
         });
         const userData = {
             _id: user_id,
@@ -554,7 +563,7 @@ app.post('/register', async (req, res) => {
         res.status(200).json({
             user: userData
         })
-    } catch(e) {
+    } catch (e) {
         if (e instanceof AxiosError) {
             res.status(400).json(e.response?.data?.details?.[0].message)
         } if (e instanceof Error) {
@@ -620,7 +629,7 @@ app.patch('/user', async (req, res) => {
                 password: undefined,
             },
         })
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -655,28 +664,28 @@ app.post('/log-in', async (req, res) => {
         const refreshTokenExpireTime = nowTime + REFRESH_TOKEN_EXP_NUMBER;
         const accessTokenExpireTime = nowTime + ACCESS_TOKEN_EXP_NUMBER;
         const refreshToken = jwt.sign(
-          {
-            user: {
-                _id: user._id.toHexString(),
-                cart_id: user.cart_id.toHexString(),
-                is_admin: user.is_admin,
+            {
+                user: {
+                    _id: user._id.toHexString(),
+                    cart_id: user.cart_id.toHexString(),
+                    is_admin: user.is_admin,
+                },
+                refreshTokenExpireTime: refreshTokenExpireTime,
+                exp: refreshTokenExpireTime,
             },
-            refreshTokenExpireTime: refreshTokenExpireTime,
-            exp: refreshTokenExpireTime,
-          },
-          REFRESHSECRET
+            REFRESHSECRET
         );
         const accessToken = jwt.sign(
-          {
-            user: {
-                _id: user._id.toHexString(),
-                cart_id: user.cart_id.toHexString(),
-                is_admin: user.is_admin,
+            {
+                user: {
+                    _id: user._id.toHexString(),
+                    cart_id: user.cart_id.toHexString(),
+                    is_admin: user.is_admin,
+                },
+                refreshTokenExpireTime: refreshTokenExpireTime,
+                exp: accessTokenExpireTime,
             },
-            refreshTokenExpireTime: refreshTokenExpireTime,
-            exp: accessTokenExpireTime,
-          },
-          ACCESSSECRET
+            ACCESSSECRET
         );
         const refreshTokenExpireDate = new Date(refreshTokenExpireTime * 1000);
         res.cookie("refreshToken", refreshToken, {
@@ -691,7 +700,7 @@ app.post('/log-in', async (req, res) => {
                 password: undefined
             }
         })
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -723,14 +732,14 @@ app.post('/add-to-cart', async (req, res) => {
                 $gte: qty
             }
         },
-        {
-            $inc: {
-                available: -qty
-            }
-        },
-        {
-            returnDocument: "after"
-        })
+            {
+                $inc: {
+                    available: -qty
+                }
+            },
+            {
+                returnDocument: "after"
+            })
         const { value } = product
         if (!value) {
             throw new Error("Not enough inventory or product not found")
@@ -754,19 +763,19 @@ app.post('/add-to-cart', async (req, res) => {
             cart_id: cart_oid,
             product_id: product_oid,
         },
-        {
-            $inc: {
-                qty,
+            {
+                $inc: {
+                    qty,
+                },
+                $setOnInsert: {
+                    price: value.price,
+                    cart_id: cart_oid,
+                    product_id: product_oid,
+                },
             },
-            $setOnInsert: {
-                price: value.price,
-                cart_id: cart_oid,
-                product_id: product_oid,
-            },
-        },
-        {
-            upsert: true
-        })
+            {
+                upsert: true
+            })
         if (!(reserved.modifiedCount || reserved.upsertedCount)) {
             throw new Error("Item not reserved.")
         }
@@ -796,13 +805,13 @@ app.post('/add-to-cart', async (req, res) => {
         await cartsByUser.updateOne({
             _id: cart_oid,
         },
-        {
-            $set: {
-                expireDate
-            }
-        })
+            {
+                $set: {
+                    expireDate
+                }
+            })
         res.status(200).json("OK!")
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -848,14 +857,14 @@ app.patch('/add-to-cart', async (req, res) => {
                 $gte: qty - reserved.value.qty,
             }
         },
-        {
-            $inc: {
-                available: reserved.value.qty - qty,
+            {
+                $inc: {
+                    available: reserved.value.qty - qty,
+                },
             },
-        },
-        {
-            returnDocument: "after"
-        })
+            {
+                returnDocument: "after"
+            })
         const { value } = product
         if (!value) {
             throw new Error("Not enough inventory or product not found")
@@ -893,24 +902,24 @@ app.patch('/add-to-cart', async (req, res) => {
         const expireDate = new Date()
         expireDate.setHours(expireDate.getHours() + 1)
         const newReserved = await reservedInventory.insertOne(
-        {
-            qty,
-            cart_id: cart_oid,
-            product_id: product_oid,
-        })
+            {
+                qty,
+                cart_id: cart_oid,
+                product_id: product_oid,
+            })
         if (!newReserved.insertedId) {
             throw new Error("Item not reserved.")
         }
         await cartsByUser.updateOne({
             _id: cart_oid,
         },
-        {
-            $set: {
-                expireDate
-            }
-        })
+            {
+                $set: {
+                    expireDate
+                }
+            })
         res.status(200).json("OK!")
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -919,7 +928,7 @@ app.patch('/add-to-cart', async (req, res) => {
     }
 });
 
-app.get('/add-to-cart', async (req, res) => {    
+app.get('/add-to-cart', async (req, res) => {
     try {
         const ctx = Context.get(req);
         const { itemsByCart } = req.app.locals as ContextLocals
@@ -929,7 +938,7 @@ app.get('/add-to-cart', async (req, res) => {
         res.header("Pragma", "no-cache");
         res.header("Expires", "0");
         res.status(200).json(itemsInCart)
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -941,7 +950,7 @@ app.get('/add-to-cart', async (req, res) => {
 app.delete('/add-to-cart', async (req, res) => {
     try {
         const ctx = Context.get(req);
-        const item_by_cart_id = req.body.item_by_cart_id   
+        const item_by_cart_id = req.body.item_by_cart_id
         const { itemsByCart, reservedInventory, inventory } = req.app.locals as ContextLocals
         if (item_by_cart_id && typeof item_by_cart_id !== "string") {
             throw new Error("Product ID is required and must be a string")
@@ -961,21 +970,21 @@ app.delete('/add-to-cart', async (req, res) => {
             throw new Error("Item in cart was not deleted.")
         }
         const reservation = await reservedInventory.findOneAndDelete(
-        {
-            product_id: result.value.product_id,
-            cart_id: cart_oid,
-        })
+            {
+                product_id: result.value.product_id,
+                cart_id: cart_oid,
+            })
         if (!reservation.value) {
             throw new Error("Item in reservation was not deleted.")
         }
         const product = await inventory.findOneAndUpdate({
             _id: result.value.product_id,
         },
-        {
-            $inc: {
-                available: reservation.value.qty
-            },
-        })
+            {
+                $inc: {
+                    available: reservation.value.qty
+                },
+            })
         const { value } = product
         if (!value) {
             throw new Error("Inventory not modified.")
@@ -994,7 +1003,7 @@ app.delete('/add-to-cart', async (req, res) => {
             fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
         });
         res.status(200).json("Ok")
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -1007,7 +1016,7 @@ app.post('/checkout', async (req, res) => {
     try {
         const ctx = Context.get(req);
         const { itemsByCart, sessions, users } = req.app.locals as ContextLocals
-        const { name, apellidos, street, email, country, colonia, zip, city, state, phone, address_id } = req.body
+        const { name, apellidos, street, email, country, colonia, zip, city, state, phone, address_id, phone_prefix } = req.body
         if (!name || typeof name !== "string") {
             throw new Error("Name is required and must be a string")
         }
@@ -1035,32 +1044,35 @@ app.post('/checkout', async (req, res) => {
         if (!phone || typeof phone !== "string") {
             throw new Error("Phone is required and must be a string")
         }
+        if (!phone_prefix || phone_prefix !== "+52") {
+            throw new Error("Phone is required and must from Mexico")
+        }
         const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         if (address_id && typeof address_id === "string" && ctx?.userJWT) {
-            const address_oid = new ObjectId(address_id) 
+            const address_oid = new ObjectId(address_id)
             const user_oid = new ObjectId(ctx.userJWT.user._id)
             const result = await users.findOneAndUpdate({
                 _id: user_oid,
                 "addresses._id": address_oid,
             },
-            {
-                $set: {
-                    default_address: address_oid,
-                    "addresses.$.full_address": `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
-                    "addresses.$.country": country,
-                    "addresses.$.street": street,
-                    "addresses.$.colonia": colonia,
-                    "addresses.$.zip": zip,
-                    "addresses.$.city": city,
-                    "addresses.$.state": state,
-                    "addresses.$.phone": phone,
-                    "addresses.$.name": name,
-                    "addresses.$.apellidos": apellidos,
+                {
+                    $set: {
+                        default_address: address_oid,
+                        "addresses.$.full_address": `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
+                        "addresses.$.country": country,
+                        "addresses.$.street": street,
+                        "addresses.$.colonia": colonia,
+                        "addresses.$.zip": zip,
+                        "addresses.$.city": city,
+                        "addresses.$.state": state,
+                        "addresses.$.phone": phone,
+                        "addresses.$.name": name,
+                        "addresses.$.apellidos": apellidos,
+                    },
                 },
-            },
-            {
-                returnDocument: "after"
-            })
+                {
+                    returnDocument: "after"
+                })
             if (!result.value) {
                 throw new Error("No user updated")
             }
@@ -1091,29 +1103,30 @@ app.post('/checkout', async (req, res) => {
             const result = await users.findOneAndUpdate({
                 _id: user_oid,
             },
-            {
-                $set: {
-                    default_address: address_id,
+                {
+                    $set: {
+                        default_address: address_id,
+                    },
+                    $push: {
+                        addresses: {
+                            _id: address_id,
+                            full_address: `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
+                            country,
+                            street,
+                            colonia,
+                            zip,
+                            city,
+                            state,
+                            phone,
+                            name,
+                            apellidos,
+                            phone_prefix,
+                        }
+                    },
                 },
-                $push: {
-                    addresses: {
-                        _id: address_id,
-                        full_address: `${street}, ${colonia}, ${zip} ${city} ${state}, ${country} (${name} ${apellidos})`,
-                        country,
-                        street,
-                        colonia,
-                        zip,
-                        city,
-                        state,
-                        phone,
-                        name,
-                        apellidos,
-                    }
-                },
-            },
-            {
-                returnDocument: "after"
-            })
+                {
+                    returnDocument: "after"
+                })
             if (!result.value) {
                 throw new Error("No user updated")
             }
@@ -1146,23 +1159,23 @@ app.post('/checkout', async (req, res) => {
             const result = await sessions.findOneAndUpdate({
                 _id: session_oid,
             },
-            {
-                $set: {
-                    email,
-                    country,
-                    street,
-                    colonia,
-                    zip,
-                    city,
-                    state,
-                    phone,
-                    name,
-                    apellidos,
+                {
+                    $set: {
+                        email,
+                        country,
+                        street,
+                        colonia,
+                        zip,
+                        city,
+                        state,
+                        phone,
+                        name,
+                        apellidos,
+                    },
                 },
-            },
-            {
-                returnDocument: "after"
-            })
+                {
+                    returnDocument: "after"
+                })
             if (!result.value) {
                 throw new Error("No session updated")
             }
@@ -1171,11 +1184,11 @@ app.post('/checkout', async (req, res) => {
                 await sessions.updateOne({
                     _id: session_oid,
                 },
-                {
-                    $set: {
-                        conekta_id,
-                    }
-                })
+                    {
+                        $set: {
+                            conekta_id,
+                        }
+                    })
             }
             const products = await itemsByCart.find({ cart_id: cart_oid }).toArray()
             const order = await orderClient.createOrder({
@@ -1199,7 +1212,7 @@ app.post('/checkout', async (req, res) => {
                 checkout_id: order?.data?.checkout?.id
             })
         }
-    } catch(e) {
+    } catch (e) {
         if (e instanceof AxiosError) {
             res.status(400).json(e.response?.data?.details?.[0].message)
         } else if (e instanceof Error) {
@@ -1220,36 +1233,36 @@ app.post('/confirmation', async (req, res) => {
         if (ctx?.userJWT) {
             const user_oid = new ObjectId(ctx.userJWT.user._id)
             const [user] = await Promise.all([users.findOneAndUpdate({
-                    _id: user_oid
-                }, {
-                    $set: {
-                        cart_id: new_cart_id
-                    }
-                },
+                _id: user_oid
+            }, {
+                $set: {
+                    cart_id: new_cart_id
+                }
+            },
                 {
                     returnDocument: "after"
                 }),
-                cartsByUser.bulkWrite([
-                    {
-                        updateOne: {
-                            filter: {
-                                _id: previous_cart_id
-                            },
-                            update: {
-                                $set: {
-                                    expireDate: null
-                                }
-                            }
+            cartsByUser.bulkWrite([
+                {
+                    updateOne: {
+                        filter: {
+                            _id: previous_cart_id
                         },
-                        insertOne: {
-                            document: {
-                                _id: new_cart_id,
-                                user_id: user_oid,
+                        update: {
+                            $set: {
                                 expireDate: null
                             }
                         }
+                    },
+                    insertOne: {
+                        document: {
+                            _id: new_cart_id,
+                            user_id: user_oid,
+                            expireDate: null
+                        }
                     }
-                ])
+                }
+            ])
             ])
             const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
             const purchasedProducts = productsInCart.map(product => ({
@@ -1276,13 +1289,13 @@ app.post('/confirmation', async (req, res) => {
             );
             const refreshToken = jwt.sign(
                 {
-                  user: {
-                      _id: ctx.userJWT.user._id,
-                      cart_id: new_cart_id.toHexString(),
-                      is_admin: ctx.userJWT.user.is_admin,
-                  },
-                  refreshTokenExpireTime: ctx.userJWT.refreshTokenExpireTime,
-                  exp: ctx.userJWT.exp,
+                    user: {
+                        _id: ctx.userJWT.user._id,
+                        cart_id: new_cart_id.toHexString(),
+                        is_admin: ctx.userJWT.user.is_admin,
+                    },
+                    refreshTokenExpireTime: ctx.userJWT.refreshTokenExpireTime,
+                    exp: ctx.userJWT.exp,
                 },
                 REFRESHSECRET
             );
@@ -1335,7 +1348,7 @@ app.post('/confirmation', async (req, res) => {
                         }
                     }
                 ])
-                
+
             ])
             const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
             const purchasedProducts = productsInCart.map(product => ({
@@ -1355,7 +1368,7 @@ app.post('/confirmation', async (req, res) => {
                 user: null,
             })
         }
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -1364,7 +1377,7 @@ app.post('/confirmation', async (req, res) => {
     }
 });
 
-app.get('/purchases', async (req, res) => {    
+app.get('/purchases', async (req, res) => {
     try {
         const ctx = Context.get(req);
         if (!ctx?.userJWT?.user._id) {
@@ -1377,7 +1390,7 @@ app.get('/purchases', async (req, res) => {
         res.header("Pragma", "no-cache");
         res.header("Expires", "0");
         res.status(200).json(history)
-    } catch(e) {
+    } catch (e) {
         if (e instanceof Error) {
             res.status(400).json(e.message)
         } else {
@@ -1424,8 +1437,8 @@ app.get('*', async (req, res) => {
 //Define site pages
 //Promotions?
 //Set mongo cron tasks is better
-//Estilos
-//Keep session if active user
+//Estilos aprobados
+//Keep session if active user?
 //Keep cart if active user
 //Loading
 
