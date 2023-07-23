@@ -7,7 +7,6 @@
   <body>
     <script type="module">
       import { getCookie } from "./main.js"
-      const session = getCookie("session")
       const user = sessionStorage.getItem("user")
       const name = document.getElementById("name")
       const apellidos = document.getElementById("apellidos")
@@ -23,10 +22,7 @@
           phone.value = parsed.phone
           phonePrefix.value = parsed.phone_prefix
         }
-      } else if (session) {
-
       }
-      
     </script>
     <fourb-header></fourb-header>
     <h2 class="title">Account</h2>

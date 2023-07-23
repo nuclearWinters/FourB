@@ -226,10 +226,11 @@ app.use((req, res, next) => {
         if (payload && typeof payload !== "string") {
             if (ctx) {
                 ctx.userJWT = payload
+                res.setHeader("accessToken", authorization)
             }
         }
     }
-    if (!req.app.locals.id) {
+    if (!ctx?.userJWT?.user) {
         const payload = jwt.verify(refreshToken, REFRESHSECRET);
         if (payload) {
             const now = new Date();
@@ -1261,8 +1262,42 @@ app.post('/confirmation', async (req, res) => {
                 date: new Date(),
             }))
             await purchases.insertMany(purchasedProducts)
+            const newAccessToken = jwt.sign(
+                {
+                    user: {
+                        _id: ctx.userJWT.user._id,
+                        cart_id: new_cart_id.toHexString(),
+                        is_admin: ctx.userJWT.user.is_admin,
+                    },
+                    refreshTokenExpireTime: ctx.userJWT.refreshTokenExpireTime,
+                    exp: ctx.userJWT.exp,
+                },
+                ACCESSSECRET
+            );
+            const refreshToken = jwt.sign(
+                {
+                  user: {
+                      _id: ctx.userJWT.user._id,
+                      cart_id: new_cart_id.toHexString(),
+                      is_admin: ctx.userJWT.user.is_admin,
+                  },
+                  refreshTokenExpireTime: ctx.userJWT.refreshTokenExpireTime,
+                  exp: ctx.userJWT.exp,
+                },
+                REFRESHSECRET
+            );
+            const refreshTokenExpireDate = new Date(ctx.userJWT.refreshTokenExpireTime * 1000);
+            res.cookie("refreshToken", refreshToken, {
+                httpOnly: true,
+                expires: refreshTokenExpireDate,
+                secure: NODE_ENV === "production" ? true : false,
+            });
+            res.setHeader("accessToken", newAccessToken)
             return res.status(200).json({
-                user
+                user: {
+                    ...user.value,
+                    password: undefined,
+                }
             })
         } else {
             const [session] = await Promise.all([
@@ -1375,7 +1410,6 @@ app.get('*', async (req, res) => {
         }
         if (req.path === "/inventory-admin") {
             const ctx = Context.get(req);
-            console.log(ctx?.userJWT?.user)
             if (!ctx?.userJWT?.user.is_admin) {
                 return res.redirect("/")
             }

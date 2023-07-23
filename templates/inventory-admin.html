@@ -69,7 +69,7 @@
             qty.innerText = `Disponible: ${product.available}`
             qty.className = "price"
             const total = document.createElement("div")
-            total.innerText = `Total: ${product.total}`
+            total.innerText = `Total: $${product.total}`
             total.className = "price"
             form.appendChild(inputContainerOne)
             form.appendChild(inputContainerTwo)
@@ -91,7 +91,7 @@
                 })
               })
               qty.innerText = `Available: ${data.product.available}`
-              total.innerText = `Total: ${data.product.total}`
+              total.innerText = `Total: $${data.product.total}`
             })
             list.appendChild(projectEl)
           })

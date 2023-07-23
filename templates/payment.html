@@ -37,10 +37,10 @@
     </script>
   <body>
     <fourb-header></fourb-header>
-    <p>
-      Carro de compras
-    </p>
-    <div id="products"></div>
+    <h2 class="title">
+      Pago
+    </h2>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center;" id="products"></div>
     <form>
       <div id="example" style="width: 500px; margin: 0 auto"></div>
     </form>
@@ -49,23 +49,33 @@
       fetchWrapper('https://{{domain}}/add-to-cart')
         .then(json => {
           const list = document.querySelector('#products')
+          let total = 0
           json.forEach((product, idx) => {
             const projectEl = document.createElement('div')
+            projectEl.className = "product-card"
             projectEl.id = `${idx}-product`
             const name = document.createElement('div')
             name.textContent = product.name
+            name.className = "name"
             const price = document.createElement('div')
-            price.textContent = `$${(product.price / 100).toFixed(2)}`
+            price.className = "price"
+            price.textContent = `Precio unitario: $${(product.price / 100).toFixed(2)}`
             projectEl.appendChild(name)
             projectEl.appendChild(price)
             const quantity = document.createElement('div')
-            quantity.innerText = product.qty
+            quantity.innerText = `Cantidad: ${product.qty}`
+            quantity.className = "price"
             projectEl.appendChild(quantity)
+            const totalItem = document.createElement('div')
+            totalItem.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
+            totalItem.className = "price"
+            projectEl.appendChild(totalItem)
             const viewButton = document.createElement('button')
             viewButton.onclick = () => {
               window.location.href = `/product-${product._id}`;
             }
             viewButton.textContent = "VER"
+            viewButton.className = "fourb-button"
             projectEl.appendChild(viewButton)
             list.appendChild(projectEl)
           })

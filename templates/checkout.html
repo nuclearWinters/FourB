@@ -12,55 +12,82 @@
         const list = document.querySelector('#products')
         json.forEach((product, idx) => {
           const projectEl = document.createElement('div')
+          projectEl.className = "product-card"
           projectEl.id = `${idx}-product`
           const name = document.createElement('div')
           name.textContent = product.name
+          name.className = "name"
           const price = document.createElement('div')
           price.textContent = `$${(product.price / 100).toFixed(2)}`
+          price.className = "price"
           projectEl.appendChild(name)
           projectEl.appendChild(price)
           const quantity = document.createElement('div')
-          quantity.innerText = product.qty
+          quantity.innerText = `Quantity: ${product.qty}`
+          quantity.className = "price"
           projectEl.appendChild(quantity)
+          const total= document.createElement('div')
+          total.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
+          total.className = "price"
+          projectEl.appendChild(total)
           const viewButton = document.createElement('button')
           viewButton.onclick = () => {
-            window.location.href = `/product-${product._id}`;
+            window.location.href = `/product-${product.product_id}`;
           }
           viewButton.textContent = "VER"
+          viewButton.className = "fourb-button"
           projectEl.appendChild(viewButton)
           list.appendChild(projectEl)
         })
       });
     </script>
     <fourb-header></fourb-header>
-    <p>
-      Carro de compras
-    </p>
-    <div id="products"></div>
+    <h2 class="title">
+      Revisión
+    </h2>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center;" id="products"></div>
     <form action="https://{{domain}}/checkout" method="POST" id="checkout">
-      <label for="name">Nombre</label>
-      <input id="name" name="name" type="text" required />
-      <label for="apellidos">Apellidos</label>
-      <input id="apellidos" name="apellidos" type="text" required />
-      <label for="street">Dirección</label>
-      <input id="street" name="street" type="text" required />
-      <label for="country">Pais</label>
-      <input id="country" name="country" type="text" required />
-      <label for="colonia">Colonia</label>
-      <input id="colonia" name="colonia" type="text" required />
-      <label for="zip">Código Postal</label>
-      <input id="zip" name="zip" type="text" required />
-      <label for="city">Ciudad</label>
-      <input id="city" name="city" type="text" required />
-      <label for="state">Estado</label>
-      <input id="state" name="state" type="text" required />
-      <label for="phone">Telefono</label>
-      <input id="phone" name="phone" type="text" required />
-      <button type="submit">Pagar</button>
+      <div class="input-container">
+        <label for="name">Nombre</label>
+        <input id="name" name="name" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="apellidos">Apellidos</label>
+        <input id="apellidos" name="apellidos" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="street">Dirección</label>
+        <input id="street" name="street" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="country">Pais</label>
+        <input id="country" name="country" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="colonia">Colonia</label>
+        <input id="colonia" name="colonia" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="zip">Código Postal</label>
+        <input id="zip" name="zip" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="city">Ciudad</label>
+        <input id="city" name="city" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="state">Estado</label>
+        <input id="state" name="state" type="text" required />
+      </div>
+      <div class="input-container">
+        <label for="phone">Telefono</label>
+        <input id="phone" name="phone" type="text" required />
+      </div>
+      <button class="fourb-button" type="submit">Pagar</button>
     </form>
     <script type="module">
       import { getCookie, fetchWrapper } from "./main.js"
-      const accessToken = localStorage.getItem("accessToken")
+      const accessToken = sessionStorage.getItem("accessToken")
       if (!accessToken) {
         const form = document.querySelector('#checkout')
         const input = document.createElement('input')
@@ -70,8 +97,11 @@
         const label = document.createElement('label')
         label.for = "email"
         label.innerText = "Email"
-        form.prepend(input)
-        form.prepend(label)
+        const inputContainer = document.createElement('div')
+        inputContainer.className = "input-container"
+        inputContainer.appendChild(label)
+        inputContainer.appendChild(input)
+        form.prepend(inputContainer)
       }
       const session = getCookie("session")
       const user = sessionStorage.getItem("user")
@@ -84,7 +114,9 @@
             email.value = parsed.email
           }
           if (parsed.addresses) {
+            
             const select = document.createElement('select')
+            select.style.fontSize = "20px"
             parsed.addresses.forEach((address) => {
               const option = document.createElement('option')
               option.value = address._id
@@ -94,10 +126,38 @@
             select.name = "address_id"
             select.id = "address_id"
             const option = document.createElement('option')
-            form.prepend(select)
+            const inputContainer = document.createElement('div')
+            inputContainer.className = "input-container"
+            const labelAddresses = document.createElement('label')
+            labelAddresses.innerText = "Direcciones guardadas"
+            inputContainer.append(labelAddresses)
+            inputContainer.append(select)
+            form.prepend(inputContainer)
             option.value = ""
             option.innerText = "Usar nueva dirección"
             const changeAddress = (address_id, addresses) => {
+              if (!address_id) {
+                select.value = ""
+                const name = document.getElementById('name')
+                name.value = ""
+                const apellidos = document.getElementById('apellidos')
+                apellidos.value = ""
+                const street = document.getElementById('street')
+                street.value = ""
+                const country = document.getElementById('country')
+                country.value = ""
+                const state = document.getElementById('state')
+                state.value = ""
+                const zip = document.getElementById('zip')
+                zip.value = ""
+                const city = document.getElementById('city')
+                city.value = ""
+                const phone = document.getElementById('phone')
+                phone.value = ""
+                const colonia = document.getElementById('colonia')
+                colonia.value = ""
+                return
+              }
               const address = parsed.addresses.find(address => address_id === address._id)
               if (address) {
                 select.value = address._id

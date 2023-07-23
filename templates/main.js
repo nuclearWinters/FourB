@@ -29,7 +29,7 @@ export const fetchWrapper = async (input = "", init = {}) => {
     if (response.status !== 200) {
         throw new Error(data)
     }
-    if (data.user) {
+    if (data?.user) {
       sessionStorage.setItem("user", JSON.stringify(data.user))
     }
     return data
@@ -94,7 +94,7 @@ class Header extends HTMLElement {
     const logged = sessionStorage.getItem("accessToken")
     const user = sessionStorage.getItem("user")
     const isAdmin = user ? JSON.parse(user).is_admin : false
-    return `<div class="header">
+    return `<div class="fourb-header">
       <a href="https://{{domain}}">
         <img class="fourb-logo" src="https://{{domain}}/fourb.png" />
       </a>

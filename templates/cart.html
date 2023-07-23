@@ -45,7 +45,11 @@
           input.min = "1"
           inputContainer.appendChild(label)
           inputContainer.appendChild(input)
+          const total= document.createElement('div')
+          total.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
+          total.className = "price"
           projectEl.appendChild(inputContainer)
+          projectEl.appendChild(total)
           const viewButton = document.createElement('button')
           viewButton.onclick = () => {
             window.location.href = `/product-${product.product_id}`;
@@ -66,8 +70,8 @@
                 })
               })
               alert("Producto actualizado en el carrito")
-            } catch {
-              alert("Error")
+            } catch(e) {
+              alert(e.message)
             }
           }
           buyButton.textContent = "Actualizar cantidad"
@@ -76,17 +80,17 @@
           const deleteButton = document.createElement('button')
           deleteButton.onclick = async () => {
             try {
-              const data = await fetchWrapper('https://{{result}}/add-to-cart', {
+              const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
                 method: "DELETE",
                 body: JSON.stringify({
                   item_by_cart_id: product._id,
                 })
               })
-              const product = document.getElementById(`${idx}-product`)
-              product.remove()
+              const product_id = document.getElementById(`${idx}-product`)
+              product_id.remove()
               alert("Producto eliminado con exito")
             } catch(e) {
-              alert("Error")
+              alert(e.message)
             }
           }
           deleteButton.textContent = "Eliminar producto"
