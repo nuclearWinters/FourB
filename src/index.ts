@@ -203,7 +203,7 @@ export const jwt = {
 const app = express()
 
 app.use(cors({
-    origin: ["https://fourb.localhost", "http://fourb.mx"]
+    origin: ["https://fourb.localhost", "https://fourb.mx"]
 }))
 
 app.use(express.json())
