@@ -203,7 +203,7 @@ export const jwt = {
 const app = express()
 
 app.use(cors({
-    origin: ["https://fourb.localhost"]
+    origin: ["https://fourb.localhost", "http://fourb-env.eba-xrfvpcph.us-west-2.elasticbeanstalk.com"]
 }))
 
 app.use(express.json())
@@ -1432,8 +1432,12 @@ app.get('*', async (req, res) => {
         }
         const template = fs.readFileSync(`static/${req.path}.html`, 'utf-8');
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
-    } catch {
-        res.status(400).json({ message: "Error" })
+    } catch (e) {
+        if (e instanceof Error) {
+            res.status(400).json({ message: e.message })
+        } else {
+            res.status(400).json({ message: "Error" })
+        }
     }
 });
 
