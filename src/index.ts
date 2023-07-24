@@ -1,7 +1,7 @@
 import fs from 'fs';
 import express from 'express'
 import { Collection, MongoClient, ObjectId } from "mongodb";
-import { ACCESSSECRET, ACCESS_TOKEN_EXP_NUMBER, MONGO_DB, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, VIRTUAL_HOST } from "./config";
+import { ACCESSSECRET, ACCESS_TOKEN_EXP_NUMBER, MONGO_DB, PORT, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, VIRTUAL_HOST } from "./config";
 import Handlebars from 'handlebars';
 import bcrypt from "bcryptjs"
 import jsonwebtoken, { SignOptions } from "jsonwebtoken"
@@ -1572,7 +1572,7 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
         scheduled: true,
         timezone: "America/Cancun"
     });
-    app.listen(8000)
+    app.listen(PORT)
 })
 
 

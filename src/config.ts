@@ -4,3 +4,4 @@ export const ACCESS_TOKEN_EXP_NUMBER = 900;
 export const REFRESHSECRET = process.env.REFRESHSECRET || "REFRESHSECRET";
 export const ACCESSSECRET = process.env.ACCESSSECRET || "ACCESSSECRET";
 export const VIRTUAL_HOST = process.env.VIRTUAL_HOST
+export const PORT = process.env.PORT || 8000
