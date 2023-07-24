@@ -203,7 +203,7 @@ export const jwt = {
 const app = express()
 
 app.use(cors({
-    origin: ["https://fourb.localhost", "http://fourb-env.eba-xrfvpcph.us-west-2.elasticbeanstalk.com"]
+    origin: ["https://fourb.localhost", "http://fourb.mx"]
 }))
 
 app.use(express.json())
