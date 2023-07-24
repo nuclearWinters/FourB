@@ -4,3 +4,4 @@
 /loadbalancer/certs/*
 /build
 Archivo.zip
+.DS_Store

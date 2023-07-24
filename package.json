@@ -2,9 +2,9 @@
   "name": "fourb",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
-    "start": "npx tsc && node build/index.js",
+    "start": "node ./build/index.js",
     "build": "npx tsc",
     "dev": "ts-node-dev --transpile-only ./src/index.ts"
   },
@@ -33,5 +33,8 @@
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
     "eslint": "^8.30.0"
+  },
+  "engines": {
+    "node": "18"
   }
 }
