@@ -143,3 +143,9 @@ body {
 .input-container-modal input {
   font-size: 14px;
 }
+
+.img-product {
+  margin-bottom: 10px;
+  display: block;
+  margin: auto;
+}

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="main.css">
-  </head>
-  <script type="module" src="main.js"></script>
-  <body>
-    <script type="module">
-      import { fetchWrapper } from "./main.js"
-      fetchWrapper('https://{{domain}}/add-to-cart')
+
+<head>
+  <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+
+<body>
+  <script type="module">
+    import { fetchWrapper } from "./main.js"
+    fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
         const list = document.querySelector('#products')
         const payButton = document.getElementById("pay-button")
@@ -32,8 +34,12 @@
           const price = document.createElement('div')
           price.className = "price"
           price.textContent = `$${(product.price / 100).toFixed(2)}`
+          const img = document.createElement("img")
+          img.src = product.img
+          img.className = "img-product"
           projectEl.appendChild(name)
           projectEl.appendChild(price)
+          projectEl.appendChild(img)
           const inputContainer = document.createElement("div")
           inputContainer.className = "input-container"
           const label = document.createElement('label')
@@ -45,7 +51,7 @@
           input.min = "1"
           inputContainer.appendChild(label)
           inputContainer.appendChild(input)
-          const total= document.createElement('div')
+          const total = document.createElement('div')
           total.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
           total.className = "price"
           projectEl.appendChild(inputContainer)
@@ -70,7 +76,7 @@
                 })
               })
               alert("Producto actualizado en el carrito")
-            } catch(e) {
+            } catch (e) {
               alert(e.message)
             }
           }
@@ -89,7 +95,7 @@
               const product_id = document.getElementById(`${idx}-product`)
               product_id.remove()
               alert("Producto eliminado con exito")
-            } catch(e) {
+            } catch (e) {
               alert(e.message)
             }
           }
@@ -99,21 +105,22 @@
           list.appendChild(projectEl)
         })
       });
-    </script>
-    <fourb-header></fourb-header>
-    <h2 class="title">
-      Carro de compras
-    </h2>
-    <div class="loading" id="loading"></div>
-    <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
-    <button style="display: none;" class="fourb-button" id="pay-button">Pagar</button>
-    <script type="module">
-      const button = document.getElementById("pay-button")
-      if (button) {
-        button.onclick = () => {
-          window.location.href = "/checkout"
-        }
+  </script>
+  <fourb-header></fourb-header>
+  <h2 class="title">
+    Carro de compras
+  </h2>
+  <div class="loading" id="loading"></div>
+  <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+  <button style="display: none;" class="fourb-button" id="pay-button">Pagar</button>
+  <script type="module">
+    const button = document.getElementById("pay-button")
+    if (button) {
+      button.onclick = () => {
+        window.location.href = "/checkout"
       }
-    </script>
-  </body>
+    }
+  </script>
+</body>
+
 </html>

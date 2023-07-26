@@ -67,8 +67,12 @@
           const price = document.createElement('div')
           price.className = "price"
           price.textContent = `Precio unitario: $${(product.price / 100).toFixed(2)}`
+          const img = document.createElement("img")
+          img.src = product.img
+          img.className = "img-product"
           projectEl.appendChild(name)
           projectEl.appendChild(price)
+          projectEl.appendChild(img)
           const quantity = document.createElement('div')
           quantity.innerText = `Cantidad: ${product.qty}`
           quantity.className = "price"

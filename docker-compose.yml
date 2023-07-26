@@ -7,7 +7,7 @@ services:
       - .:/usr/src/service
     working_dir: /usr/src/service
     command:
-      ["npm", "run", "start"]
+      ["npm", "run", "dev"]
     ports:
       - "8000:8000"
     depends_on:

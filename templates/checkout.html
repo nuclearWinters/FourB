@@ -29,8 +29,12 @@
           const price = document.createElement('div')
           price.textContent = `$${(product.price / 100).toFixed(2)}`
           price.className = "price"
+          const img = document.createElement("img")
+          img.src = product.img
+          img.className = "img-product"
           projectEl.appendChild(name)
           projectEl.appendChild(price)
+          projectEl.appendChild(img)
           const quantity = document.createElement('div')
           quantity.innerText = `Quantity: ${product.qty}`
           quantity.className = "price"

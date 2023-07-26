@@ -31,8 +31,12 @@
           const total = document.createElement('div')
           total.textContent = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
           total.className = "price"
+          const img = document.createElement("img")
+          img.src = product.img
+          img.className = "img-product"
           projectEl.appendChild(name)
           projectEl.appendChild(price)
+          projectEl.appendChild(img)
           projectEl.appendChild(qty)
           projectEl.appendChild(total)
           const viewButton = document.createElement('button')

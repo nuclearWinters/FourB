@@ -77,9 +77,13 @@
           const total = document.createElement("div")
           total.innerText = `Total: $${product.total}`
           total.className = "price"
+          const img = document.createElement("img")
+          img.src = product.img
+          img.className = "img-product"
           form.appendChild(inputContainerOne)
           form.appendChild(inputContainerTwo)
           form.appendChild(inputContainerThree)
+          form.appendChild(img)
           form.appendChild(qty)
           form.appendChild(total)
           form.appendChild(button)
@@ -119,6 +123,14 @@
       <label for="name">Precio</label>
       <input id="currency" type="number" pattern="\d*" step="any" name="currency" value="0.00" required />
     </div>
+    <div class="input-container">
+      <label for="name">Imagen</label>
+      <input id="file-input" type="file" accept="png,jpg,jpeg" />
+    </div>
+    <div class="input-container">
+      <input type="text" required hidden name="img" id="img-uploaded-input" />
+      <img id="img-uploaded" alt="" width="100%" />
+    </div>
     <button class="fourb-button" type="submit">Crear</button>
   </form>
   <div class="loading" id="loading"></div>
@@ -128,15 +140,24 @@
     const form = document.getElementById("create-product")
     form.addEventListener("submit", async (e) => {
       e.preventDefault()
-      await fetchWrapper("https://{{domain}}/inventory", {
-        method: "POST",
-        body: JSON.stringify({
-          name: form.name.value,
-          qty: Number(form.qty.value),
-          price: Number(form.currency.value) * 100
+      try {
+        await fetchWrapper("https://{{domain}}/inventory", {
+          method: "POST",
+          body: JSON.stringify({
+            name: form.name.value,
+            qty: Number(form.qty.value),
+            price: Number(form.currency.value) * 100,
+            img: form.img.value,
+          })
         })
-      })
-      form.reset()
+        const imgUploaded = document.getElementById("img-uploaded")
+        if (imgUploaded) {
+          imgUploaded.src = ""
+        }
+        form.reset()
+      } catch (e) {
+        alert(e.message)
+      }
     })
     const input = document.getElementById("currency")
     if (input) {
@@ -144,6 +165,35 @@
         const valueAsCurrency = toCurrency(e.target.value, '.')
         input.value = valueAsCurrency
       }
+    }
+    const fileInput = document.getElementById("file-input")
+    if (fileInput) {
+      fileInput.addEventListener("input", async (event) => {
+        try {
+          const file = event.target.files[0]
+          const response = await fetchWrapper("https://{{domain}}/signed-url", {
+            method: "POST",
+            body: JSON.stringify({
+              fileType: file.type,
+            })
+          })
+          const awsResponse = await fetch(response.uploadUrl, {
+            method: "PUT",
+            body: file,
+          })
+          const url = new URL(response.uploadUrl);
+          const imgUploadedInput = document.getElementById("img-uploaded-input")
+          const imgUploaded = document.getElementById("img-uploaded")
+          if (imgUploadedInput) {
+            imgUploadedInput.value = url.origin + url.pathname
+          }
+          if (imgUploaded) {
+            imgUploaded.src = url.origin + url.pathname
+          }
+        } catch (e) {
+          alert(e.message)
+        }
+      })
     }
   </script>
 </body>

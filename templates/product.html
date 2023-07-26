@@ -1,36 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <link rel="stylesheet" href="main.css">
-  </head>
-  <script type="module" src="main.js"></script>
-  <body>
-    <fourb-header></fourb-header>
-    <h3 class="name">
-      {{name}}
-    </h3>
-    <div class="price">
-      Precio: {{price}}
-    </div>
-    <button class="fourb-button" id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>
-  </body>
-  <script type="module">
-    import { fetchWrapper } from './main.js'
-    const addToCart = async () => {
-      const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
-        method: "POST",
-        body: JSON.stringify({
-          product_id: "{{_id}}",
-          qty: 1
-        })
+
+<head>
+  <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+
+<body>
+  <fourb-header></fourb-header>
+  <h3 class="name">
+    {{name}}
+  </h3>
+  <div class="price">
+    Precio: {{price}}
+  </div>
+  <img class="img-product" src="{{img}}" />
+  <button class="fourb-button" id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>
+</body>
+<script type="module">
+  import { fetchWrapper } from './main.js'
+  const addToCart = async () => {
+    const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
+      method: "POST",
+      body: JSON.stringify({
+        product_id: "{{_id}}",
+        qty: 1
       })
-      alert("Añadido al carrito")
+    })
+    alert("Añadido al carrito")
+  }
+  const button = document.getElementById("add-to-cart-button")
+  if (button) {
+    button.onclick = () => {
+      addToCart()
     }
-    const button = document.getElementById("add-to-cart-button")
-    if (button) {
-      button.onclick = () => {
-        addToCart()
-      }
-    }
-  </script>
+  }
+</script>
+
 </html>

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import express from 'express'
 import { Collection, MongoClient, ObjectId } from "mongodb";
-import { ACCESSSECRET, ACCESS_TOKEN_EXP_NUMBER, MONGO_DB, PORT, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, VIRTUAL_HOST } from "./config";
+import { ACCESSSECRET, ACCESS_KEY, ACCESS_TOKEN_EXP_NUMBER, BUCKET_NAME, CONEKTA_API_KEY, MONGO_DB, PORT, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, SECRET_KEY, VIRTUAL_HOST } from "./config";
 import Handlebars from 'handlebars';
 import bcrypt from "bcryptjs"
 import jsonwebtoken, { SignOptions } from "jsonwebtoken"
@@ -11,9 +11,20 @@ import { Request } from 'express';
 import { AxiosError } from "axios"
 import cors from "cors"
 import cron from 'node-cron';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "crypto";
 
-const apikey = "key_pMkl11iWacZYSvetll0CaMc";
-const config = new Configuration({ accessToken: apikey });
+const clientS3 = new S3Client({
+    apiVersion: "2006-03-01",
+    region: process.env.REGION,
+    credentials: {
+        accessKeyId: ACCESS_KEY,
+        secretAccessKey: SECRET_KEY,
+    },
+});
+
+const config = new Configuration({ accessToken: CONEKTA_API_KEY });
 const customerClient = new CustomersApi(config);
 const orderClient = new OrdersApi(config);
 
@@ -99,6 +110,7 @@ interface InventoryMongo {
     total: number;
     name: string;
     price: number;
+    img: string;
 }
 
 interface ItemsByCartMongo {
@@ -108,6 +120,7 @@ interface ItemsByCartMongo {
     qty: number;
     price: number;
     name: string;
+    img: string;
 }
 
 interface PurchasesMongo {
@@ -329,6 +342,7 @@ app.post('/inventory', async (req, res) => {
         const qty = req.body.qty
         const name = req.body.name
         const price = req.body.price
+        const img = req.body.img
         if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
@@ -338,12 +352,16 @@ app.post('/inventory', async (req, res) => {
         if (typeof name !== "string") {
             throw new Error("Name is required and must be a string")
         }
+        if (typeof img !== "string") {
+            throw new Error("Image is required and must be a string")
+        }
         const { inventory } = req.app.locals as ContextLocals
         const inventoryResult = await inventory.insertOne({
             available: qty,
             total: qty,
             name,
             price,
+            img,
         })
         fs.readFile('templates/product.html', 'utf8', async (err, html) => {
             if (err) throw err;
@@ -728,7 +746,7 @@ app.post('/add-to-cart', async (req, res) => {
             {
                 $inc: {
                     available: -qty
-                }
+                },
             },
             {
                 returnDocument: "after"
@@ -786,6 +804,7 @@ app.post('/add-to-cart', async (req, res) => {
                     product_id: product_oid,
                     cart_id: cart_oid,
                     price: value.price,
+                    img: value.img,
                 }
             },
             {
@@ -1402,6 +1421,34 @@ app.get('/purchases', async (req, res) => {
     }
 })
 
+app.post('/signed-url', async (req, res) => {
+    try {
+        const { fileType } = req.body
+        if (typeof fileType !== "string") {
+            throw new Error("fileType is required and must be a string")
+        }
+        const ex = fileType.split("/")[1];
+        const Key = `${randomUUID()}.${ex}`;
+        const putObjectParams = {
+            Bucket: BUCKET_NAME,
+            Key,
+            ContentType: `image/${ex}`,
+        };
+        const command = new PutObjectCommand(putObjectParams);
+        const uploadUrl = await getSignedUrl(clientS3, command, { expiresIn: 3600 });
+        res.status(200).json({
+            uploadUrl,
+            key: Key,
+        });
+    } catch (e) {
+        if (e instanceof Error) {
+            res.status(400).json(e.message)
+        } else {
+            res.status(400).json("Error")
+        }
+    }
+})
+
 app.get('*', async (req, res) => {
     try {
         if (req.path === "/") {
@@ -1442,11 +1489,9 @@ app.get('*', async (req, res) => {
 });
 
 //Define site pages
-//Promotions?
-//Estilos aprobados
+//Copiar estilos de https://www.fourb.online/
 //Keep session if active user?
 //Keep cart if active user
-//Find a framework or hybrid approach? No, too much boilerplate
 //Images
 //Responsive
 //SEO
@@ -1466,6 +1511,7 @@ MongoClient.connect(MONGO_DB, {}).then(async (client) => {
                 buttonText: item.available ? "Añadir al carrito" : "Agotado",
                 buttonProps: item.available ? "" : "disabled",
                 domain: VIRTUAL_HOST,
+                img: item.img,
             });
             fs.writeFileSync(`static/product-${item._id}.html`, result)
         })

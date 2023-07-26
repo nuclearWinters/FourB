@@ -25,8 +25,12 @@
           const price = document.createElement('div')
           price.textContent = `$${(product.price / 100).toFixed(2)}`
           price.className = "price"
+          const img = document.createElement("img")
+          img.src = product.img
+          img.className = "img-product"
           projectEl.appendChild(name)
           projectEl.appendChild(price)
+          projectEl.appendChild(img)
           const viewButton = document.createElement('button')
           viewButton.onclick = () => {
             window.location.href = `/product-${product._id}`;

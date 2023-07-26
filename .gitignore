@@ -5,3 +5,4 @@
 /build
 Archivo.zip
 .DS_Store
+.env
