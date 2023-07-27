@@ -12,7 +12,9 @@
     {{name}}
   </h3>
   <div class="price">
-    Precio: {{price}}
+    <span>Precio: </span>
+    <span class="{{priceClass}}">{{price}}</span>
+    <span class="{{discontPriceClass}}">{{discountPrice}}</span>
   </div>
   <img class="img-product" src="{{img}}" />
   <button class="fourb-button" id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>

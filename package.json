@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node build/index.js",
     "build": "npx tsc",
-    "dev": "ts-node-dev --transpile-only ./src/index.ts"
+    "dev": "ts-node-dev --transpile-only ./src/index.ts",
+    "html": "ts-node-dev --transpile-only ./src/createHTML.ts"
   },
   "author": "",
   "license": "ISC",

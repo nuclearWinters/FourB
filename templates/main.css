@@ -149,3 +149,7 @@ body {
   display: block;
   margin: auto;
 }
+
+.price-discounted {
+  text-decoration-line: line-through;
+}

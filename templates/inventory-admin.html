@@ -51,6 +51,37 @@
           }
           inputContainerTwo.appendChild(priceLabel)
           inputContainerTwo.appendChild(priceInput)
+          const inputContainerFour = document.createElement("div")
+          inputContainerFour.className = "input-container"
+          const discountPriceLabel = document.createElement('label')
+          discountPriceLabel.for = "discountPrice"
+          discountPriceLabel.innerText = "Precio de descuento"
+          const discountPriceInput = document.createElement('input')
+          discountPriceInput.name = "discountPrice"
+          discountPriceInput.type = "number"
+          discountPriceInput.required = true
+          discountPriceInput.value = toCurrency(String(product.discount_price), '.')
+          discountPriceInput.id = "currency"
+          discountPriceInput.pattern = "\d*"
+          discountPriceInput.step = "any"
+          discountPriceInput.oninput = (e) => {
+            const valueAsCurrency = toCurrency(e.target.value, '.')
+            discountPriceInput.value = valueAsCurrency
+          }
+          const checkboxDiscount = document.createElement("input")
+          checkboxDiscount.checked = product.use_discount
+          checkboxDiscount.id = "checkboxDiscount"
+          checkboxDiscount.name = "checkboxDiscount"
+          checkboxDiscount.type = "checkbox"
+          const checkboxContainer = document.createElement("div")
+          const checkboxDiscountLabel = document.createElement("label")
+          checkboxDiscountLabel.for = "checkboxDiscount"
+          checkboxDiscountLabel.innerText = "Usar descuento"
+          checkboxContainer.appendChild(checkboxDiscount)
+          checkboxContainer.appendChild(checkboxDiscountLabel)
+          inputContainerFour.appendChild(discountPriceLabel)
+          inputContainerFour.appendChild(checkboxContainer)
+          inputContainerFour.appendChild(discountPriceInput)
           const inputContainerThree = document.createElement("div")
           inputContainerThree.className = "input-container"
           const increaseLabel = document.createElement('label')
@@ -75,13 +106,14 @@
           qty.innerText = `Disponible: ${product.available}`
           qty.className = "price"
           const total = document.createElement("div")
-          total.innerText = `Total: $${product.total}`
+          total.innerText = `Total: ${product.total}`
           total.className = "price"
           const img = document.createElement("img")
           img.src = product.img
           img.className = "img-product"
           form.appendChild(inputContainerOne)
           form.appendChild(inputContainerTwo)
+          form.appendChild(inputContainerFour)
           form.appendChild(inputContainerThree)
           form.appendChild(img)
           form.appendChild(qty)
@@ -91,6 +123,7 @@
           projectEl.appendChild(form)
           form.addEventListener("submit", async (e) => {
             e.preventDefault()
+            console.log("form", form)
             const data = await fetchWrapper("https://{{domain}}/inventory", {
               method: "PATCH",
               body: JSON.stringify({
@@ -98,10 +131,12 @@
                 name: form.name.value,
                 increment: Number(form.increment.value),
                 price: Number(form.price.value) * 100,
+                discountPrice: Number(form.discountPrice.value) * 100,
+                useDiscount: form.checkboxDiscount.checked,
               })
             })
-            qty.innerText = `Available: ${data.product.available}`
-            total.innerText = `Total: $${data.product.total}`
+            qty.innerText = `Disponible: ${data.product.available}`
+            total.innerText = `Total: ${data.product.total}`
           })
           list.appendChild(projectEl)
         })
@@ -116,16 +151,24 @@
       <input id="name-product" name="name" required type="text" />
     </div>
     <div class="input-container">
-      <label for="name">Cantidad</label>
+      <label for="qty">Cantidad</label>
       <input id="qty-product" name="qty" required type="number" />
     </div>
     <div class="input-container">
-      <label for="name">Precio</label>
+      <label for="currency">Precio</label>
       <input id="currency" type="number" pattern="\d*" step="any" name="currency" value="0.00" required />
     </div>
     <div class="input-container">
-      <label for="name">Imagen</label>
-      <input id="file-input" type="file" accept="png,jpg,jpeg" />
+      <label for="discount">Descuento</label>
+      <div>
+        <input type="checkbox" id="checkboxDiscount" name="checkboxDiscount" />
+        <label for="checkboxDiscount">Usar descuento</label>
+      </div>
+      <input id="discount" type="number" pattern="\d*" step="any" name="discount" value="0.00" required />
+    </div>
+    <div class="input-container">
+      <label for="image">Imagen</label>
+      <input name="image" id="file-input" type="file" accept="png,jpg,jpeg" />
     </div>
     <div class="input-container">
       <input type="text" required hidden name="img" id="img-uploaded-input" />
@@ -148,6 +191,8 @@
             qty: Number(form.qty.value),
             price: Number(form.currency.value) * 100,
             img: form.img.value,
+            discountPrice: Number(form.discount.value) * 100,
+            useDiscount: form.checkboxDiscount.checked,
           })
         })
         const imgUploaded = document.getElementById("img-uploaded")
@@ -164,6 +209,13 @@
       input.oninput = (e) => {
         const valueAsCurrency = toCurrency(e.target.value, '.')
         input.value = valueAsCurrency
+      }
+    }
+    const discountInput = document.getElementById("discount")
+    if (discountInput) {
+      discountInput.oninput = (e) => {
+        const valueAsCurrency = toCurrency(e.target.value, '.')
+        discountInput.value = valueAsCurrency
       }
     }
     const fileInput = document.getElementById("file-input")

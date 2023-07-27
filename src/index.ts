@@ -14,6 +14,7 @@ import cron from 'node-cron';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
+import { createHTML } from './utils';
 
 const clientS3 = new S3Client({
     apiVersion: "2006-03-01",
@@ -104,13 +105,15 @@ interface SessionMongo {
     state: string | null;
 }
 
-interface InventoryMongo {
+export interface InventoryMongo {
     _id?: ObjectId;
     available: number;
     total: number;
     name: string;
     price: number;
     img: string;
+    discount_price: number;
+    use_discount: boolean;
 }
 
 interface ItemsByCartMongo {
@@ -119,6 +122,8 @@ interface ItemsByCartMongo {
     cart_id: ObjectId,
     qty: number;
     price: number;
+    discount_price: number;
+    use_discount: boolean;
     name: string;
     img: string;
 }
@@ -128,6 +133,8 @@ interface PurchasesMongo {
     product_id: ObjectId,
     qty: number;
     price: number;
+    discount_price: number;
+    use_discount: boolean;
     name: string;
     user_id: ObjectId | null;
     session_id: ObjectId;
@@ -343,6 +350,8 @@ app.post('/inventory', async (req, res) => {
         const name = req.body.name
         const price = req.body.price
         const img = req.body.img
+        const discountPrice = req.body.discountPrice
+        const useDiscount = req.body.useDiscount
         if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
@@ -355,6 +364,12 @@ app.post('/inventory', async (req, res) => {
         if (typeof img !== "string") {
             throw new Error("Image is required and must be a string")
         }
+        if (typeof discountPrice !== "number") {
+            throw new Error("Discount price must be a number")
+        }
+        if (typeof useDiscount !== "boolean") {
+            throw new Error("useDiscount must be a boolean")
+        }
         const { inventory } = req.app.locals as ContextLocals
         const inventoryResult = await inventory.insertOne({
             available: qty,
@@ -362,6 +377,8 @@ app.post('/inventory', async (req, res) => {
             name,
             price,
             img,
+            discount_price: discountPrice,
+            use_discount: useDiscount,
         })
         fs.readFile('templates/product.html', 'utf8', async (err, html) => {
             if (err) throw err;
@@ -371,8 +388,13 @@ app.post('/inventory', async (req, res) => {
                 total: qty,
                 name,
                 price: `$${(price / 100).toFixed(2)}`,
+                discountPrice: useDiscount ? `$${(discountPrice / 100).toFixed(2)}` : "",
                 buttonText: qty ? "Añadir al carrito" : "Agotado",
-                buttonProps: qty ? "" : "disabled"
+                buttonProps: qty ? "" : "disabled",
+                domain: VIRTUAL_HOST,
+                img,
+                priceClass: useDiscount ? "price-discounted" : "",
+                discontPriceClass: useDiscount ? "" : "",
             });
             fs.writeFileSync(`static/product-${inventoryResult.insertedId}.html`, result)
         });
@@ -392,6 +414,8 @@ app.patch('/inventory', async (req, res) => {
         const increment = req.body.increment || 0
         const name = req.body.name
         const price = req.body.price
+        const discountPrice = req.body.discountPrice
+        const useDiscount = req.body.useDiscount
         if (typeof id !== "string") {
             throw new Error("ID is required and must be a string")
         }
@@ -401,16 +425,22 @@ app.patch('/inventory', async (req, res) => {
         if (increment && typeof increment !== "number") {
             throw new Error("Increment must be a number")
         }
+        if (discountPrice && typeof discountPrice !== "number") {
+            throw new Error("Price must be a number")
+        }
         if (price && typeof price !== "number") {
-            throw new Error("Price and must be a number")
+            throw new Error("Price must be a number")
         }
         if (name && typeof name !== "string") {
             throw new Error("Name must be a string")
         }
-        if (!(price || name || increment)) {
+        if (useDiscount && typeof useDiscount !== "boolean") {
+            throw new Error("Name must be a boolean")
+        }
+        if (!(price || name || increment || discountPrice || useDiscount !== undefined)) {
             throw new Error("At least one field is required")
         }
-        const { inventory, itemsByCart } = req.app.locals as ContextLocals
+        const { inventory } = req.app.locals as ContextLocals
         const product_oid = new ObjectId(id)
         const result = await inventory.findOneAndUpdate({
             _id: product_oid,
@@ -425,10 +455,12 @@ app.patch('/inventory', async (req, res) => {
                         total: increment,
                     }
                 } : {}),
-                ...((name || price) ? {
+                ...((name || price || discountPrice || typeof useDiscount === "boolean") ? {
                     $set: {
                         ...(name ? { name } : {}),
-                        ...(price ? { price } : {})
+                        ...(price ? { price } : {}),
+                        ...(discountPrice ? { discount_price: discountPrice } : {}),
+                        ...(typeof useDiscount === "boolean" ? { use_discount: useDiscount } : {})
                     }
                 } : {})
             },
@@ -439,9 +471,6 @@ app.patch('/inventory', async (req, res) => {
         if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
-        if (price) {
-            await itemsByCart.updateMany({ product_id: product_oid }, { $set: { price } })
-        }
         fs.readFile('templates/product.html', 'utf8', async (err, html) => {
             if (err) throw err;
             const template = Handlebars.compile(html);
@@ -450,8 +479,13 @@ app.patch('/inventory', async (req, res) => {
                 total: value.total,
                 name: value.name,
                 price: `$${(value.price / 100).toFixed(2)}`,
+                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled"
+                buttonProps: value.available ? "" : "disabled",
+                domain: VIRTUAL_HOST,
+                img: value.img,
+                priceClass: value.use_discount ? "price-discounted" : "",
+                discontPriceClass: value.use_discount ? "" : "",
             });
             fs.writeFileSync(`static/product-${result.value?._id}.html`, templateResult)
         });
@@ -763,8 +797,13 @@ app.post('/add-to-cart', async (req, res) => {
                 total: value.total,
                 name: value.name,
                 price: `$${(value.price / 100).toFixed(2)}`,
+                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled"
+                buttonProps: value.available ? "" : "disabled",
+                domain: VIRTUAL_HOST,
+                img: value.img,
+                priceClass: value.use_discount ? "price-discounted" : "",
+                discontPriceClass: value.use_discount ? "" : "",
             });
             fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
         });
@@ -779,7 +818,6 @@ app.post('/add-to-cart', async (req, res) => {
                     qty,
                 },
                 $setOnInsert: {
-                    price: value.price,
                     cart_id: cart_oid,
                     product_id: product_oid,
                 },
@@ -804,6 +842,8 @@ app.post('/add-to-cart', async (req, res) => {
                     product_id: product_oid,
                     cart_id: cart_oid,
                     price: value.price,
+                    discount_price: value.discount_price,
+                    use_discount: value.use_discount,
                     img: value.img,
                 }
             },
@@ -889,8 +929,13 @@ app.patch('/add-to-cart', async (req, res) => {
                 total: value.total,
                 name: value.name,
                 price: `$${(value.price / 100).toFixed(2)}`,
+                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled"
+                buttonProps: value.available ? "" : "disabled",
+                domain: VIRTUAL_HOST,
+                img: value.img,
+                priceClass: value.use_discount ? "price-discounted" : "",
+                discontPriceClass: value.use_discount ? "" : "",
             });
             fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
         });
@@ -905,6 +950,8 @@ app.patch('/add-to-cart', async (req, res) => {
                     qty,
                     price: value.price,
                     name: value.name,
+                    discount_price: value.discount_price,
+                    use_discount: value.use_discount,
                 },
             },
         )
@@ -1009,8 +1056,13 @@ app.delete('/add-to-cart', async (req, res) => {
                 total: value.total,
                 name: value.name,
                 price: `$${(value.price / 100).toFixed(2)}`,
+                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
                 buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled"
+                buttonProps: value.available ? "" : "disabled",
+                domain: VIRTUAL_HOST,
+                img: value.img,
+                priceClass: value.use_discount ? "price-discounted" : "",
+                discontPriceClass: value.use_discount ? "" : "",
             });
             fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
         });
@@ -1097,7 +1149,7 @@ app.post('/checkout', async (req, res) => {
                 },
                 line_items: products.map(product => ({
                     name: product.name,
-                    unit_price: product.price,
+                    unit_price: product.use_discount ? product.discount_price : product.price,
                     quantity: product.qty
                 })),
                 checkout: {
@@ -1154,7 +1206,7 @@ app.post('/checkout', async (req, res) => {
                 },
                 line_items: products.map(product => ({
                     name: product.name,
-                    unit_price: product.price,
+                    unit_price: product.use_discount ? product.discount_price : product.price,
                     quantity: product.qty
                 })),
                 checkout: {
@@ -1216,7 +1268,7 @@ app.post('/checkout', async (req, res) => {
                 },
                 line_items: products.map(product => ({
                     name: product.name,
-                    unit_price: product.price,
+                    unit_price: product.use_discount ? product.discount_price : product.price,
                     quantity: product.qty
                 })),
                 checkout: {
@@ -1290,6 +1342,8 @@ app.post('/confirmation', async (req, res) => {
                 product_id: product.product_id,
                 qty: product.qty,
                 price: product.price,
+                discount_price: product.discount_price,
+                use_discount: product.use_discount,
                 user_id: user_oid,
                 session_id: session_oid,
                 date: new Date(),
@@ -1376,6 +1430,8 @@ app.post('/confirmation', async (req, res) => {
                 product_id: product._id,
                 qty: product.qty,
                 price: product.price,
+                discount_price: product.discount_price,
+                use_discount: product.use_discount,
                 user_id: null,
                 session_id: session_oid,
                 date: new Date(),
@@ -1490,106 +1546,21 @@ app.get('*', async (req, res) => {
 
 //Define site pages
 //Copiar estilos de https://www.fourb.online/
+//Añadir propiedad Discount en producto
+//Añadir propiedad de clasificaciones
+//Copiar un poco del inventario
 //Keep session if active user?
-//Keep cart if active user
-//Images
+//Keep cart if active user?
 //Responsive
 //SEO
 //Search
 //Pagination
 
+
+
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
-    fs.readFile('templates/product.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const products = await db.collection("inventory").find().toArray()
-        products.forEach(item => {
-            const template = Handlebars.compile(html);
-            const result = template({
-                ...item,
-                price: `$${(item.price / 100).toFixed(2)}`,
-                buttonText: item.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: item.available ? "" : "disabled",
-                domain: VIRTUAL_HOST,
-                img: item.img,
-            });
-            fs.writeFileSync(`static/product-${item._id}.html`, result)
-        })
-    });
-    fs.readFile('templates/history.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/history.html`, result)
-    });
-    fs.readFile('templates/inventory-admin.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/inventory-admin.html`, result)
-    });
-    fs.readFile('templates/main.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/main.html`, result)
-    });
-    fs.readFile('templates/cart.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/cart.html`, result)
-    });
-    fs.readFile('templates/checkout.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/checkout.html`, result)
-    });
-    fs.readFile('templates/payment.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/payment.html`, result)
-    });
-    fs.readFile('templates/account.html', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/account.html`, result)
-    });
-    fs.readFile('templates/main.js', 'utf8', async (err, html) => {
-        if (err) throw err;
-        const template = Handlebars.compile(html);
-        const result = template({
-            domain: VIRTUAL_HOST,
-        });
-        fs.writeFileSync(`static/main.js`, result)
-    });
-    fs.readFile('templates/main.css', 'utf8', async (err, html) => {
-        if (err) throw err;
-        fs.writeFileSync(`static/main.css`, html)
-    });
-    fs.copyFile('templates/favicon.ico', 'static/favicon.ico', async (err) => {
-        if (err) throw err;
-    });
-    fs.copyFile('templates/fourb.png', 'static/fourb.png', function (err) {
-        if (err) throw err
-    });
+    createHTML(db)
     app.locals.users = db.collection("users")
     app.locals.cartsByUser = db.collection("carts_by_user")
     app.locals.inventory = db.collection("inventory")
