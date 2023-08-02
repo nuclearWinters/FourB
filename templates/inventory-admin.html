@@ -48,7 +48,68 @@
                 <div id="total-${product._id}" class="price">
                   Total: ${product.total}</span>
                 </div>
-                <button  type="submit" class="fourb-button" type="submit">Actualizar</button>
+                <div class="input-container">
+                  <label for="discount">Tags</label>
+                  <div style="display: flex; flex-wrap: wrap;">
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxArete-${product._id}" name="checkboxArete" ${product.tags.includes("arete") ? "checked" : ""} />
+                      <label for="checkboxArete-${product._id}">Arete</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxCollar-${product._id}" name="checkboxCollar" ${product.tags.includes("collar") ? "checked" : ""} />
+                      <label for="checkboxCollar-${product._id}">Collar</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxAnillo-${product._id}" name="checkboxAnillo" ${product.tags.includes("anillo") ? "checked" : ""} />
+                      <label for="checkboxAnillo-${product._id}">Anillo</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxPulsera-${product._id}" name="checkboxPulsera" ${product.tags.includes("pulsera") ? "checked" : ""} />
+                      <label for="checkboxPulsera-${product._id}">Pulsera</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxPiercing-${product._id}" name="checkboxPiercing" ${product.tags.includes("piercing") ? "checked" : ""} />
+                      <label for="checkboxPiercing-${product._id}">Piercing</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTobillera-${product._id}" name="checkboxTobillera" ${product.tags.includes("tobillera") ? "checked" : ""} />
+                      <label for="checkboxTobillera-${product._id}">Tobillera</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxOro10K-${product._id}" name="checkboxOro10K" ${product.tags.includes("oro10k") ? "checked" : ""} />
+                      <label for="checkboxOro10K-${product._id}">ORO 10 K</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxAjustable-${product._id}" name="checkboxAjustable" ${product.tags.includes("ajustable") ? "checked" : ""} />
+                      <label for="checkboxAjustable-${product._id}">Ajustable</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTalla5-${product._id}" name="checkboxTalla5" ${product.tags.includes("talla5") ? "checked" : ""} />
+                      <label for="checkboxTalla5-${product._id}">Talla 5</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTalla6-${product._id}" name="checkboxTalla6" ${product.tags.includes("talla6") ? "checked" : ""} />
+                      <label for="checkboxTalla6-${product._id}">Talla 6</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTalla7-${product._id}" name="checkboxTalla7" ${product.tags.includes("talla7") ? "checked" : ""} />
+                      <label for="checkboxTalla7-${product._id}">Talla 7</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTalla8-${product._id}" name="checkboxTalla8" ${product.tags.includes("talla8") ? "checked" : ""} />
+                      <label for="checkboxTalla8-${product._id}">Talla 8</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTalla9-${product._id}" name="checkboxTalla9" ${product.tags.includes("talla9") ? "checked" : ""} />
+                      <label for="checkboxTalla9-${product._id}">Talla 9</label>
+                    </div>
+                    <div style="width: 25%;">
+                      <input type="checkbox" id="checkboxTalla10-${product._id}" name="checkboxTalla10" ${product.tags.includes("tall10") ? "checked" : ""} />
+                      <label for="checkboxTalla10-${product._id}">Talla 10</label>
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" class="fourb-button" type="submit">Actualizar</button>
                 <button type="button" class="fourb-button" onclick="(() => {
                   window.location.href = '/product-${product._id}'
                 })()">VER</button>
@@ -80,6 +141,20 @@
                   price: Number(form.currency.value) * 100,
                   discountPrice: Number(form.discount.value) * 100,
                   useDiscount: form.checkboxDiscount.checked,
+                  checkboxArete: form.checkboxArete.checked,
+                  checkboxCollar: form.checkboxCollar.checked,
+                  checkboxAnillo: form.checkboxAnillo.checked,
+                  checkboxPulsera: form.checkboxPulsera.checked,
+                  checkboxPiercing: form.checkboxPiercing.checked,
+                  checkboxTobillera: form.checkboxTobillera.checked,
+                  checkboxOro10K: form.checkboxOro10K.checked,
+                  checkboxAjustable: form.checkboxAjustable.checked,
+                  checkboxTalla5: form.checkboxTalla5.checked,
+                  checkboxTalla6: form.checkboxTalla6.checked,
+                  checkboxTalla7: form.checkboxTalla7.checked,
+                  checkboxTalla8: form.checkboxTalla8.checked,
+                  checkboxTalla9: form.checkboxTalla9.checked,
+                  checkboxTalla10: form.checkboxTalla10.checked,
                 })
               })
               available.innerText = `Disponible: ${data.product.available}`
@@ -128,6 +203,67 @@
       <input type="text" required hidden name="img" id="img-uploaded-input" />
       <img id="img-uploaded" alt="" width="100%" />
     </div>
+    <div class="input-container">
+      <label for="discount">Tags</label>
+      <div style="display: flex; flex-wrap: wrap;">
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxArete" name="checkboxArete" />
+          <label for="checkboxArete">Arete</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxCollar" name="checkboxCollar" />
+          <label for="checkboxCollar">Collar</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxAnillo" name="checkboxAnillo" />
+          <label for="checkboxAnillo">Anillo</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxPulsera" name="checkboxPulsera" />
+          <label for="checkboxPulsera">Pulsera</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxPiercing" name="checkboxPiercing" />
+          <label for="checkboxPiercing">Piercing</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTobillera" name="checkboxTobillera" />
+          <label for="checkboxTobillera">Tobillera</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxOro10K" name="checkboxOro10K" />
+          <label for="checkboxOro10K">ORO 10 K</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxAjustable" name="checkboxAjustable" />
+          <label for="checkboxAjustable">Ajustable</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTalla5" name="checkboxTalla5" />
+          <label for="checkboxTalla5">Talla 5</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTalla6" name="checkboxTalla6" />
+          <label for="checkboxTalla6">Talla 6</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTalla7" name="checkboxTalla7" />
+          <label for="checkboxTalla7">Talla 7</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTalla8" name="checkboxTalla8" />
+          <label for="checkboxTalla8">Talla 8</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTalla9" name="checkboxTalla9" />
+          <label for="checkboxTalla9">Talla 9</label>
+        </div>
+        <div style="width: 25%;">
+          <input type="checkbox" id="checkboxTalla10" name="checkboxTalla10" />
+          <label for="checkboxTalla10">Talla 10</label>
+        </div>
+      </div>
+    </div>
     <button class="fourb-button" type="submit">Crear</button>
   </form>
   <div class="loading" id="loading"></div>
@@ -147,6 +283,20 @@
             img: form.img.value,
             discountPrice: Number(form.discount.value) * 100,
             useDiscount: form.checkboxDiscount.checked,
+            checkboxArete: form.checkboxArete.checked,
+            checkboxCollar: form.checkboxCollar.checked,
+            checkboxAnillo: form.checkboxAnillo.checked,
+            checkboxPulsera: form.checkboxPulsera.checked,
+            checkboxPiercing: form.checkboxPiercing.checked,
+            checkboxTobillera: form.checkboxTobillera.checked,
+            checkboxOro10K: form.checkboxOro10K.checked,
+            checkboxAjustable: form.checkboxAjustable.checked,
+            checkboxTalla5: form.checkboxTalla5.checked,
+            checkboxTalla6: form.checkboxTalla6.checked,
+            checkboxTalla7: form.checkboxTalla7.checked,
+            checkboxTalla8: form.checkboxTalla8.checked,
+            checkboxTalla9: form.checkboxTalla9.checked,
+            checkboxTalla10: form.checkboxTalla10.checked,
           })
         })
         const imgUploaded = document.getElementById("img-uploaded")
@@ -154,8 +304,13 @@
           imgUploaded.src = ""
         }
         form.reset()
+        alert("¡Creado con exito!")
       } catch (e) {
-        alert(e.message)
+        if (e instanceof Error) {
+          alert(e.message)
+        } else {
+          alert("Error")
+        }
       }
     })
     const input = document.getElementById("currency")
@@ -197,7 +352,11 @@
             imgUploaded.src = url.origin + url.pathname
           }
         } catch (e) {
-          alert(e.message)
+          if (e instanceof Error) {
+            alert(e.message)
+          } else {
+            alert("Error")
+          }
         }
       })
     }

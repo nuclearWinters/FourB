@@ -115,6 +115,7 @@ export interface InventoryMongo {
     img: string;
     discount_price: number;
     use_discount: boolean;
+    tags: string[]
 }
 
 interface ItemsByCartMongo {
@@ -355,6 +356,20 @@ app.post('/inventory', async (req, res) => {
         const img = req.body.img
         const discountPrice = req.body.discountPrice
         const useDiscount = req.body.useDiscount
+        const checkboxArete = req.body.checkboxArete
+        const checkboxCollar = req.body.checkboxCollar
+        const checkboxAnillo = req.body.checkboxAnillo
+        const checkboxPulsera = req.body.checkboxPulsera
+        const checkboxPiercing = req.body.checkboxPiercing
+        const checkboxTobillera = req.body.checkboxTobillera
+        const checkboxOro10K = req.body.checkboxOro10K
+        const checkboxAjustable = req.body.checkboxAjustable
+        const checkboxTalla5 = req.body.checkboxTalla5
+        const checkboxTalla6 = req.body.checkboxTalla6
+        const checkboxTalla7 = req.body.checkboxTalla7
+        const checkboxTalla8 = req.body.checkboxTalla8
+        const checkboxTalla9 = req.body.checkboxTalla9
+        const checkboxTalla10 = req.body.checkboxTalla10
         if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
@@ -373,6 +388,91 @@ app.post('/inventory', async (req, res) => {
         if (typeof useDiscount !== "boolean") {
             throw new Error("useDiscount must be a boolean")
         }
+        if (typeof checkboxCollar !== "boolean") {
+            throw new Error("checkboxCollar must be a boolean")
+        }
+        if (typeof checkboxAnillo !== "boolean") {
+            throw new Error("checkboxAnillo must be a boolean")
+        }
+        if (typeof checkboxPulsera !== "boolean") {
+            throw new Error("checkboxPulsera must be a boolean")
+        }
+        if (typeof checkboxPiercing !== "boolean") {
+            throw new Error("checkboxPiercing must be a boolean")
+        }
+        if (typeof checkboxTobillera !== "boolean") {
+            throw new Error("checkboxTobillera must be a boolean")
+        }
+        if (typeof checkboxOro10K !== "boolean") {
+            throw new Error("checkboxOro10K must be a boolean")
+        }
+        if (typeof checkboxAjustable !== "boolean") {
+            throw new Error("checkboxAjustable must be a boolean")
+        }
+        if (typeof checkboxTalla5 !== "boolean") {
+            throw new Error("checkboxTalla5 must be a boolean")
+        }
+        if (typeof checkboxTalla6 !== "boolean") {
+            throw new Error("checkboxTalla6 must be a boolean")
+        }
+        if (typeof checkboxTalla7 !== "boolean") {
+            throw new Error("checkboxTalla7 must be a boolean")
+        }
+        if (typeof checkboxTalla8 !== "boolean") {
+            throw new Error("checkboxTalla8 must be a boolean")
+        }
+        if (typeof checkboxTalla9 !== "boolean") {
+            throw new Error("checkboxTalla9 must be a boolean")
+        }
+        if (typeof checkboxTalla10 !== "boolean") {
+            throw new Error("checkboxTalla10 must be a boolean")
+        }
+        if (typeof checkboxArete !== "boolean") {
+            throw new Error("checkboxArete must be a boolean")
+        }
+        const tags = []
+        if (checkboxArete) {
+            tags.push("arete")
+        }
+        if (checkboxCollar) {
+            tags.push("collar")
+        }
+        if (checkboxAnillo) {
+            tags.push("anillo")
+        }
+        if (checkboxPulsera) {
+            tags.push("pulsera")
+        }
+        if (checkboxPiercing) {
+            tags.push("piercing")
+        }
+        if (checkboxTobillera) {
+            tags.push("tobillera")
+        }
+        if (checkboxOro10K) {
+            tags.push("oro10k")
+        }
+        if (checkboxAjustable) {
+            tags.push("ajustable")
+        }
+        if (checkboxTalla5) {
+            tags.push("talla5")
+        }
+        if (checkboxTalla6) {
+            tags.push("talla6")
+        }
+        if (checkboxTalla7) {
+            tags.push("talla7")
+        }
+        if (checkboxTalla8) {
+            tags.push("tall8")
+        }
+        if (checkboxTalla9) {
+            tags.push("tall9")
+        }
+        if (checkboxTalla10) {
+            tags.push("talla10")
+        }
         const { inventory } = req.app.locals as ContextLocals
         const inventoryResult = await inventory.insertOne({
             available: qty,
@@ -382,6 +482,7 @@ app.post('/inventory', async (req, res) => {
             img,
             discount_price: discountPrice,
             use_discount: useDiscount,
+            tags,
         })
         fs.readFile('templates/product.html', 'utf8', async (err, html) => {
             if (err) throw err;
@@ -419,6 +520,20 @@ app.patch('/inventory', async (req, res) => {
         const price = req.body.price
         const discountPrice = req.body.discountPrice
         const useDiscount = req.body.useDiscount
+        const checkboxArete = req.body.checkboxArete
+        const checkboxCollar = req.body.checkboxCollar
+        const checkboxAnillo = req.body.checkboxAnillo
+        const checkboxPulsera = req.body.checkboxPulsera
+        const checkboxPiercing = req.body.checkboxPiercing
+        const checkboxTobillera = req.body.checkboxTobillera
+        const checkboxOro10K = req.body.checkboxOro10K
+        const checkboxAjustable = req.body.checkboxAjustable
+        const checkboxTalla5 = req.body.checkboxTalla5
+        const checkboxTalla6 = req.body.checkboxTalla6
+        const checkboxTalla7 = req.body.checkboxTalla7
+        const checkboxTalla8 = req.body.checkboxTalla8
+        const checkboxTalla9 = req.body.checkboxTalla9
+        const checkboxTalla10 = req.body.checkboxTalla10
         if (typeof id !== "string") {
             throw new Error("ID is required and must be a string")
         }
@@ -443,6 +558,91 @@ app.patch('/inventory', async (req, res) => {
         if (!(price || name || increment || discountPrice || useDiscount !== undefined)) {
             throw new Error("At least one field is required")
         }
+        if (typeof checkboxCollar !== "boolean") {
+            throw new Error("checkboxCollar must be a boolean")
+        }
+        if (typeof checkboxAnillo !== "boolean") {
+            throw new Error("checkboxAnillo must be a boolean")
+        }
+        if (typeof checkboxPulsera !== "boolean") {
+            throw new Error("checkboxPulsera must be a boolean")
+        }
+        if (typeof checkboxPiercing !== "boolean") {
+            throw new Error("checkboxPiercing must be a boolean")
+        }
+        if (typeof checkboxTobillera !== "boolean") {
+            throw new Error("checkboxTobillera must be a boolean")
+        }
+        if (typeof checkboxOro10K !== "boolean") {
+            throw new Error("checkboxOro10K must be a boolean")
+        }
+        if (typeof checkboxAjustable !== "boolean") {
+            throw new Error("checkboxAjustable must be a boolean")
+        }
+        if (typeof checkboxTalla5 !== "boolean") {
+            throw new Error("checkboxTalla5 must be a boolean")
+        }
+        if (typeof checkboxTalla6 !== "boolean") {
+            throw new Error("checkboxTalla6 must be a boolean")
+        }
+        if (typeof checkboxTalla7 !== "boolean") {
+            throw new Error("checkboxTalla7 must be a boolean")
+        }
+        if (typeof checkboxTalla8 !== "boolean") {
+            throw new Error("checkboxTalla8 must be a boolean")
+        }
+        if (typeof checkboxTalla9 !== "boolean") {
+            throw new Error("checkboxTalla9 must be a boolean")
+        }
+        if (typeof checkboxTalla10 !== "boolean") {
+            throw new Error("checkboxTalla10 must be a boolean")
+        }
+        if (typeof checkboxArete !== "boolean") {
+            throw new Error("checkboxArete must be a boolean")
+        }
+        const tags = []
+        if (checkboxArete) {
+            tags.push("arete")
+        }
+        if (checkboxCollar) {
+            tags.push("collar")
+        }
+        if (checkboxAnillo) {
+            tags.push("anillo")
+        }
+        if (checkboxPulsera) {
+            tags.push("pulsera")
+        }
+        if (checkboxPiercing) {
+            tags.push("piercing")
+        }
+        if (checkboxTobillera) {
+            tags.push("tobillera")
+        }
+        if (checkboxOro10K) {
+            tags.push("oro10k")
+        }
+        if (checkboxAjustable) {
+            tags.push("ajustable")
+        }
+        if (checkboxTalla5) {
+            tags.push("talla5")
+        }
+        if (checkboxTalla6) {
+            tags.push("talla6")
+        }
+        if (checkboxTalla7) {
+            tags.push("talla7")
+        }
+        if (checkboxTalla8) {
+            tags.push("tall8")
+        }
+        if (checkboxTalla9) {
+            tags.push("tall9")
+        }
+        if (checkboxTalla10) {
+            tags.push("talla10")
+        }
         const { inventory } = req.app.locals as ContextLocals
         const product_oid = new ObjectId(id)
         const result = await inventory.findOneAndUpdate({
@@ -463,7 +663,8 @@ app.patch('/inventory', async (req, res) => {
                         ...(name ? { name } : {}),
                         ...(price ? { price } : {}),
                         ...(discountPrice ? { discount_price: discountPrice } : {}),
-                        ...(typeof useDiscount === "boolean" ? { use_discount: useDiscount } : {})
+                        ...(typeof useDiscount === "boolean" ? { use_discount: useDiscount } : {}),
+                        tags,
                     }
                 } : {})
             },
@@ -1552,7 +1753,6 @@ app.get('*', async (req, res) => {
 
 //Define site pages
 //Copiar estilos de https://www.fourb.online/
-//Añadir propiedad Discount en producto
 //Añadir propiedad de clasificaciones
 //Copiar un poco del inventario
 //Keep session if active user?
@@ -1561,9 +1761,7 @@ app.get('*', async (req, res) => {
 //SEO
 //Search
 //Pagination
-//Reduce costs!
-
-
+//Reduce costs! Beanstalk to single EC2 instance?
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
