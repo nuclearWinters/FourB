@@ -8,7 +8,7 @@
 
 <body>
   <script type="module">
-    import { fetchWrapper } from "./main.js"
+    import { fetchWrapper, insertHTML } from "./main.js"
     fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
         const list = document.querySelector('#products')
@@ -24,49 +24,37 @@
           loading.style.display = "none"
         }
         payButton.style.display = "block"
-        json.forEach((product, idx) => {
-          const projectEl = document.createElement('div')
-          projectEl.className = "product-card"
-          projectEl.id = `${idx}-product`
-          const name = document.createElement('div')
-          name.className = "name"
-          name.textContent = product.name
-          const price = document.createElement('div')
-          price.className = "price"
-          price.textContent = `$${(product.price / 100).toFixed(2)}`
-          const img = document.createElement("img")
-          img.src = product.img
-          img.className = "img-product"
-          projectEl.appendChild(name)
-          projectEl.appendChild(price)
-          projectEl.appendChild(img)
-          const inputContainer = document.createElement("div")
-          inputContainer.className = "input-container"
-          const label = document.createElement('label')
-          label.innerText = "Cantidad"
-          const input = document.createElement('input')
-          input.type = "number"
-          input.id = `${idx}-quantity`
-          input.value = product.qty
-          input.min = "1"
-          inputContainer.appendChild(label)
-          inputContainer.appendChild(input)
-          const total = document.createElement('div')
-          total.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
-          total.className = "price"
-          projectEl.appendChild(inputContainer)
-          projectEl.appendChild(total)
-          const viewButton = document.createElement('button')
-          viewButton.onclick = () => {
-            window.location.href = `/product-${product.product_id}`;
-          }
-          viewButton.textContent = "VER"
-          viewButton.className = "fourb-button"
-          projectEl.appendChild(viewButton)
-          const buyButton = document.createElement('button')
-          buyButton.onclick = async () => {
+        json.forEach((product) => {
+          insertHTML(
+            list,
+            `<div id="${product._id}-product" class="product-card">
+              <div class="name">${product.name}</div>
+              <div class="price">
+                <span>Precio: </span>
+                <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
+                ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
+              </div>
+              <img class="img-product" src="${product.img}" />
+              <div class="input-container">
+                <label for="${product._id}-quantity">Cantidad</label>
+                <input type="number" id="${product._id}-quantity" value=${product.qty} min="1" />
+              </div>
+              <div class="price">Total: $${(((product.use_discount ? product.discount_price : product.price) * product.qty) / 100).toFixed(2)}</div>
+              <button class="fourb-button" onclick="(() => {
+                window.location.href = '/product-${product.product_id}'
+              })()">VER</button>
+              <button id="update-${product._id}" class="fourb-button">
+                Actualizar cantidad
+              </button>
+              <button id="remove-${product._id}" class="fourb-button">
+                Eliminar producto
+              </button>
+            </div>`
+          )
+          const updateButton = document.getElementById(`update-${product._id}`)
+          updateButton.onclick = async () => {
             try {
-              const input = document.getElementById(`${idx}-quantity`)
+              const input = document.getElementById(`${product._id}-quantity`)
               const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
                 method: "PATCH",
                 body: JSON.stringify({
@@ -77,13 +65,14 @@
               })
               alert("Producto actualizado en el carrito")
             } catch (e) {
-              alert(e.message)
+              if (e instanceof Error) {
+                alert(e.message)
+              } else {
+                alert("Error")
+              }
             }
           }
-          buyButton.textContent = "Actualizar cantidad"
-          buyButton.className = "fourb-button"
-          projectEl.appendChild(buyButton)
-          const deleteButton = document.createElement('button')
+          const deleteButton = document.getElementById(`remove-${product._id}`)
           deleteButton.onclick = async () => {
             try {
               const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
@@ -92,17 +81,17 @@
                   item_by_cart_id: product._id,
                 })
               })
-              const product_id = document.getElementById(`${idx}-product`)
+              const product_id = document.getElementById(`${product._id}-product`)
               product_id.remove()
               alert("Producto eliminado con exito")
             } catch (e) {
-              alert(e.message)
+              if (e instanceof Error) {
+                alert(e.message)
+              } else {
+                alert("Error")
+              }
             }
           }
-          deleteButton.textContent = "Eliminar producto"
-          deleteButton.className = "fourb-button"
-          projectEl.appendChild(deleteButton)
-          list.appendChild(projectEl)
         })
       });
   </script>

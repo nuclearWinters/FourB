@@ -8,7 +8,7 @@
 
 <body>
   <script type="module">
-    import { fetchWrapper } from "./main.js"
+    import { fetchWrapper, insertHTML } from "./main.js"
     fetchWrapper('https://{{domain}}/inventory')
       .then(json => {
         const loading = document.getElementById("loading")
@@ -17,28 +17,25 @@
         }
         const list = document.querySelector('#products')
         json.forEach(product => {
-          const projectEl = document.createElement('div')
-          projectEl.className = "product-card"
-          const name = document.createElement('div')
-          name.textContent = product.name
-          name.className = "name"
-          const price = document.createElement('div')
-          price.textContent = `$${(product.price / 100).toFixed(2)}`
-          price.className = "price"
-          const img = document.createElement("img")
-          img.src = product.img
-          img.className = "img-product"
-          projectEl.appendChild(name)
-          projectEl.appendChild(price)
-          projectEl.appendChild(img)
-          const viewButton = document.createElement('button')
-          viewButton.onclick = () => {
-            window.location.href = `/product-${product._id}`;
-          }
-          viewButton.textContent = "VER"
-          viewButton.className = "fourb-button"
-          projectEl.appendChild(viewButton)
-          const buyButton = document.createElement('button')
+          insertHTML(
+            list,
+            `<div class="product-card">
+              <div class="name">${product.name}</div>
+              <div class="price">
+                <span>Precio: </span>
+                <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
+                ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
+              </div>
+              <img class="img-product" src="${product.img}" />
+              <button class="fourb-button" onclick="(() => {
+                window.location.href = '/product-${product._id}'
+              })()">VER</button>
+              <button id="add-to-cart-${product._id}" class="fourb-button">
+                AÑADIR AL CARRITO
+              </button>
+            </div>`
+          )
+          const buyButton = document.getElementById(`add-to-cart-${product._id}`)
           buyButton.onclick = async () => {
             try {
               const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
@@ -49,14 +46,14 @@
                 })
               })
               alert("Añadido al carrito")
-            } catch {
-              alert("Error")
+            } catch (e) {
+              if (e instanceof Error) {
+                alert(e.message)
+              } else {
+                alert("Error")
+              }
             }
           }
-          buyButton.textContent = "AÑADIR AL CARRITO"
-          buyButton.className = "fourb-button"
-          projectEl.appendChild(buyButton)
-          list.appendChild(projectEl)
         })
       });
   </script>

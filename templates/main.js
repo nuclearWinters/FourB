@@ -36,6 +36,8 @@ export const fetchWrapper = async (input = "", init = {}) => {
   return data
 }
 
+export const insertHTML = (el, html) => el.insertAdjacentHTML("afterbegin", html);
+
 const getDigitsFromValue = (value = "") =>
   value.replace(/(-(?!\d))|[^0-9|-]/g, "") || ""
 

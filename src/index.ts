@@ -103,6 +103,7 @@ interface SessionMongo {
     zip: string | null;
     city: string | null;
     state: string | null;
+    phone_prefix: string | null;
 }
 
 export interface InventoryMongo {
@@ -139,6 +140,7 @@ interface PurchasesMongo {
     user_id: ObjectId | null;
     session_id: ObjectId;
     date: Date;
+    img: string;
 }
 
 interface CartsByUserMongo {
@@ -297,7 +299,8 @@ app.use(async (req, res, next) => {
             colonia: null,
             zip: null,
             city: null,
-            state: null
+            state: null,
+            phone_prefix: null,
         }
         res.cookie("session", JSON.stringify(session), {
             secure: true,
@@ -1241,6 +1244,7 @@ app.post('/checkout', async (req, res) => {
                         phone,
                         name,
                         apellidos,
+                        phone_prefix,
                     },
                 },
                 {
@@ -1347,6 +1351,7 @@ app.post('/confirmation', async (req, res) => {
                 user_id: user_oid,
                 session_id: session_oid,
                 date: new Date(),
+                img: product.img,
             }))
             await purchases.insertMany(purchasedProducts)
             const newAccessToken = jwt.sign(
@@ -1435,6 +1440,7 @@ app.post('/confirmation', async (req, res) => {
                 user_id: null,
                 session_id: session_oid,
                 date: new Date(),
+                img: product.img,
             }))
             await purchases.insertMany(purchasedProducts)
             if (session.value) {
@@ -1555,6 +1561,7 @@ app.get('*', async (req, res) => {
 //SEO
 //Search
 //Pagination
+//Reduce costs!
 
 
 

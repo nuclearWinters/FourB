@@ -8,7 +8,7 @@
 
 <body>
   <script type="module">
-    import { fetchWrapper } from "./main.js"
+    import { fetchWrapper, insertHTML } from "./main.js"
     fetchWrapper('https://{{domain}}/add-to-cart')
       .then(json => {
         if (!json.length) {
@@ -19,38 +19,24 @@
           loading.style.display = "none"
         }
         const list = document.querySelector('#products')
-        json.forEach((product, idx) => {
-          const projectEl = document.createElement('div')
-          projectEl.className = "product-card"
-          projectEl.id = `${idx}-product`
-          const name = document.createElement('div')
-          name.textContent = product.name
-          name.className = "name"
-          const price = document.createElement('div')
-          price.textContent = `$${(product.price / 100).toFixed(2)}`
-          price.className = "price"
-          const img = document.createElement("img")
-          img.src = product.img
-          img.className = "img-product"
-          projectEl.appendChild(name)
-          projectEl.appendChild(price)
-          projectEl.appendChild(img)
-          const quantity = document.createElement('div')
-          quantity.innerText = `Quantity: ${product.qty}`
-          quantity.className = "price"
-          projectEl.appendChild(quantity)
-          const total = document.createElement('div')
-          total.innerText = `Total: $${((product.price * product.qty) / 100).toFixed(2)}`
-          total.className = "price"
-          projectEl.appendChild(total)
-          const viewButton = document.createElement('button')
-          viewButton.onclick = () => {
-            window.location.href = `/product-${product.product_id}`;
-          }
-          viewButton.textContent = "VER"
-          viewButton.className = "fourb-button"
-          projectEl.appendChild(viewButton)
-          list.appendChild(projectEl)
+        json.forEach((product) => {
+          insertHTML(
+            list,
+            `<div id="${product._id}-product" class="product-card">
+              <div class="name">${product.name}</div>
+              <div class="price">
+                <span>Precio: </span>
+                <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
+                ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
+              </div>
+              <img class="img-product" src="${product.img}" />
+              <div class="price">Cantidad: ${product.qty}</div>
+              <div class="price">Total: $${(((product.use_discount ? product.discount_price : product.price) * product.qty) / 100).toFixed(2)}</div>
+              <button class="fourb-button" onclick="(() => {
+                window.location.href = '/product-${product.product_id}'
+              })()">VER</button>
+            </div>`
+          )
         })
       });
   </script>
