@@ -27,6 +27,11 @@
   font-size: 16px;
 }
 
+.fourb-header-container {
+  display: flex;
+  flex-direction: column;
+}
+
 .fourb-header {
   background: black;
   height: 60px;
@@ -34,6 +39,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 20px;
+  padding: 0px 20px;
 }
 
 .fourb-header button:nth-child(2) {
@@ -148,6 +154,10 @@ body {
   margin-bottom: 10px;
   display: block;
   margin: auto;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 16px;
+  object-fit: contain;
 }
 
 .price-discounted {

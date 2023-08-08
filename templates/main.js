@@ -38,6 +38,8 @@ export const fetchWrapper = async (input = "", init = {}) => {
 
 export const insertHTML = (el, html) => el.insertAdjacentHTML("afterbegin", html);
 
+export const insertBeforeHTML = (el, html) => el.insertAdjacentHTML("beforeend", html);
+
 const getDigitsFromValue = (value = "") =>
   value.replace(/(-(?!\d))|[^0-9|-]/g, "") || ""
 
@@ -97,67 +99,178 @@ class Header extends HTMLElement {
     const logged = sessionStorage.getItem("accessToken")
     const user = sessionStorage.getItem("user")
     const isAdmin = user ? JSON.parse(user).is_admin : false
-    return `<div class="fourb-header">
-      <a href="https://{{domain}}">
-        <img class="fourb-logo" src="https://{{domain}}/fourb.png" />
-      </a>
-      <button class="header-button" id="go-to-cart">Carro de compras</button>
-      ${isAdmin ? `<button class="header-button" id="inventory-header">Inventario</button>` : ""}
-      ${logged ? "" : `<button class="header-button" id="show-log-in">Iniciar Sesión</button>`}
-      ${logged ? "" : `<button class="header-button" id="show-register">Registrarse</button>`}
-      ${logged ? `<button class="header-button" id="settings">Cuenta</button>` : ""}
-      ${logged ? `<button class="header-button" id="history">Historial</button>` : ""}
-      ${logged ? `<button class="header-button" id="log-out">Cerrar Sesión</button>` : ""}
-      <div id="register-modal" class="auth-modal" style="display: none;">
-        <form action="https://{{domain}}/register" class="auth-form" method="POST" id="form-register">
-          <span id="close-register" class="close">x</span>
-          <h2 class="title">Registrarse</h2>
-          <div class="input-container-modal">
-            <label for="name">Nombre</label>
-            <input type="text" name="name" required />
-          </div>
-          <div class="input-container-modal">
-            <label for="apellidos">Apellidos</label>
-            <input type="text" name="apellidos" required />
-          </div>
-          <div class="input-container-modal">
-            <label for="email">Email</label>
-            <input type="text" name="email" required />
-          </div>
-          <div class="input-container-modal">
-            <label for="text">Teléfono</label>
-            <div style="display: flex; flex-direction: row;">
-              <select type="text" name="phonePrefix" required>
-                <option value="+52">🇲🇽 Mexico (+52)</option>
-              </selecy>
-              <input style="flex: 1;" type="text" name="phone" required />
+    return `<div class="fourb-header-container">
+      <div class="fourb-header">
+        <a href="https://{{domain}}">
+          <img class="fourb-logo" src="https://{{domain}}/fourb.png" />
+        </a>
+        <button class="header-button" id="go-to-cart">Carro de compras</button>
+        ${isAdmin ? `<button class="header-button" id="inventory-header">Inventario</button>` : ""}
+        ${logged ? "" : `<button class="header-button" id="show-log-in">Iniciar Sesión</button>`}
+        ${logged ? "" : `<button class="header-button" id="show-register">Registrarse</button>`}
+        ${logged ? `<button class="header-button" id="settings">Cuenta</button>` : ""}
+        ${logged ? `<button class="header-button" id="history">Historial</button>` : ""}
+        ${logged ? `<button class="header-button" id="log-out">Cerrar Sesión</button>` : ""}
+        <div id="register-modal" class="auth-modal" style="display: none;">
+          <form action="https://{{domain}}/register" class="auth-form" method="POST" id="form-register">
+            <span id="close-register" class="close">x</span>
+            <h2 class="title">Registrarse</h2>
+            <div class="input-container-modal">
+              <label for="name">Nombre</label>
+              <input type="text" name="name" required />
             </div>
-          </div>
-          <div class="input-container-modal">
-            <label for="password">Contraseña</label>
-            <input type="password" name="password" required />
-          </div>
-          <div class="input-container-modal">
-            <label for="password">Confirmar Contraseña</label>
-            <input type="password" name="confirmPassword" required />
-          </div>
-          <button class="fourb-button" type="submit">Registrarse</button>
-        </form>
+            <div class="input-container-modal">
+              <label for="apellidos">Apellidos</label>
+              <input type="text" name="apellidos" required />
+            </div>
+            <div class="input-container-modal">
+              <label for="email">Email</label>
+              <input type="text" name="email" required />
+            </div>
+            <div class="input-container-modal">
+              <label for="text">Teléfono</label>
+              <div style="display: flex; flex-direction: row;">
+                <select type="text" name="phonePrefix" required>
+                  <option value="+52">🇲🇽 Mexico (+52)</option>
+                </selecy>
+                <input style="flex: 1;" type="text" name="phone" required />
+              </div>
+            </div>
+            <div class="input-container-modal">
+              <label for="password">Contraseña</label>
+              <input type="password" name="password" required />
+            </div>
+            <div class="input-container-modal">
+              <label for="password">Confirmar Contraseña</label>
+              <input type="password" name="confirmPassword" required />
+            </div>
+            <button class="fourb-button" type="submit">Registrarse</button>
+          </form>
+        </div>
+        <div id="log-in-modal" class="auth-modal" style="display: none;">
+          <form action="https://{{domain}}/log-in"class="auth-form" method="POST" id="form-log-in">
+            <span id="close-log-in" class="close">x</span>
+            <h2 class="title">Iniciar sesión</h2>
+            <div class="input-container-modal">
+              <label for="email">Email</label>
+              <input type="text" name="email" required />
+            </div>
+            <div class="input-container-modal">
+              <label for="password">Contraseña</label>
+              <input type="password" name="password" required />
+            </div>
+            <button class="fourb-button" type="submit">Iniciar Sesión</button>
+          </form>
+        </div>
       </div>
-      <div id="log-in-modal" class="auth-modal" style="display: none;">
-        <form action="https://{{domain}}/log-in"class="auth-form" method="POST" id="form-log-in">
-          <span id="close-log-in" class="close">x</span>
-          <h2 class="title">Iniciar sesión</h2>
-          <div class="input-container-modal">
-            <label for="email">Email</label>
-            <input type="text" name="email" required />
-          </div>
-          <div class="input-container-modal">
-            <label for="password">Contraseña</label>
-            <input type="password" name="password" required />
-          </div>
-          <button class="fourb-button" type="submit">Iniciar Sesión</button>
+      <div class="fourb-header">
+        <form
+          id="search-form"
+          onsubmit="(() => {
+            const form = document.getElementById("search-form")
+            window.location.href = '/?search=' + form.search.value
+          })()"
+        >
+          <input name="search" placeholder="Busqueda..." />
         </form>
+        <button
+          class="header-button"
+          id="aretes"
+          onclick="(() => {
+            window.location.href = '/?tag=arete'
+          })()"
+        >Aretes</button>
+        <button
+          class="header-button"
+          id="anillos"
+          onclick="(() => {
+            window.location.href = '/?tag=anillo'
+          })()"
+        >Anillos</button>
+        <button
+          class="header-button"
+          id="collares"
+          onclick="(() => {
+            window.location.href = '/?tag=collar'
+          })()"
+        >Collares</button>
+        <button
+          class="header-button"
+          id="pulseras"
+          onclick="(() => {
+            window.location.href = '/?tag=pulsera'
+          })()"
+        >Pulseras</button>
+        <button
+          class="header-button"
+          id="percings"
+          onclick="(() => {
+            window.location.href = '/?tag=piercing'
+          })()"
+        >Piercings</button>
+        <button
+          class="header-button"
+          id="tobilleras"
+          onclick="(() => {
+            window.location.href = '/?tag=tobillera'
+          })()"
+        >Tobilleras</button>
+        <button
+          class="header-button"
+          id="oro-10k"
+          onclick="(() => {
+            window.location.href = '/?tag=oro10k'
+          })()"
+        >Oro 10k</button>
+        <button
+          class="header-button"
+          id="ajustables"
+          onclick="(() => {
+            window.location.href = '/?tag=ajustable'
+          })()"
+        >Ajustables</button>
+        <button
+          class="header-button"
+          id="talla-5"
+          onclick="(() => {
+            window.location.href = '/?tag=talla5'
+          })()"
+        >Talla 5</button>
+        <button
+          class="header-button"
+          id="talla-6"
+          onclick="(() => {
+            window.location.href = '/?tag=talla6'
+          })()"
+        >Talla 6</button>
+        <button
+          class="header-button"
+          id="talla-7"
+          onclick="(() => {
+            window.location.href = '/?tag=talla7'
+          })()"
+        >Talla 7</button>
+        <button
+          class="header-button"
+          id="talla-8"
+          onclick="(() => {
+            window.location.href = '/?tag=talla8'
+          })()"
+        >Talla 8</button>
+        <button
+          class="header-button"
+          id="talla-9"
+          onclick="(() => {
+            window.location.href = '/?tag=talla9'
+          })()"
+        >Talla 9</button>
+        <button
+          class="header-button"
+          id="talla-10"
+          onclick="(() => {
+            window.location.href = '/?tag=talla10'
+          })()"
+        >Talla 10</button>
       </div>
     <div>`
   }

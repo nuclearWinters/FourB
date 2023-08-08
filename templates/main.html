@@ -8,18 +8,31 @@
 
 <body>
   <script type="module">
-    import { fetchWrapper, insertHTML } from "./main.js"
-    fetchWrapper('https://{{domain}}/inventory')
-      .then(json => {
-        const loading = document.getElementById("loading")
-        if (loading) {
-          loading.style.display = "none"
-        }
-        const list = document.querySelector('#products')
-        json.forEach(product => {
-          insertHTML(
-            list,
-            `<div class="product-card">
+    import { fetchWrapper, insertHTML, insertBeforeHTML } from "./main.js"
+    const queryString = window.location.search
+    const urlParams = new URLSearchParams(queryString)
+    const tag = urlParams.get('tag') || ""
+    const search = urlParams.get('search') || ""
+    let moreProductsLeft = true
+    let afterProduct = ""
+    const fetchProducts = async (after) => {
+      const json = await fetchWrapper(`https://{{domain}}/inventory?tag=${tag}&search=${search}&after=${after}`)
+      const loading = document.getElementById("loading")
+      if (loading) {
+        loading.style.display = "none"
+      }
+      if (json.length === 0) {
+        moreProductsLeft = false
+      }
+      const lastItem = json.at(-1)
+      if (lastItem) {
+        afterProduct = lastItem._id
+      }
+      const list = document.querySelector('#products')
+      json.forEach(product => {
+        insertBeforeHTML(
+          list,
+          `<div class="product-card">
               <div class="name">${product.name}</div>
               <div class="price">
                 <span>Precio: </span>
@@ -34,33 +47,63 @@
                 AÑADIR AL CARRITO
               </button>
             </div>`
-          )
-          const buyButton = document.getElementById(`add-to-cart-${product._id}`)
-          buyButton.onclick = async () => {
-            try {
-              const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
-                method: "POST",
-                body: JSON.stringify({
-                  product_id: product._id,
-                  qty: 1
-                })
+        )
+        const buyButton = document.getElementById(`add-to-cart-${product._id}`)
+        buyButton.onclick = async () => {
+          try {
+            const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
+              method: "POST",
+              body: JSON.stringify({
+                product_id: product._id,
+                qty: 1
               })
-              alert("Añadido al carrito")
-            } catch (e) {
-              if (e instanceof Error) {
-                alert(e.message)
-              } else {
-                alert("Error")
-              }
+            })
+            alert("Añadido al carrito")
+          } catch (e) {
+            if (e instanceof Error) {
+              alert(e.message)
+            } else {
+              alert("Error")
             }
           }
-        })
-      });
+        }
+      })
+    }
+    fetchProducts(afterProduct)
+    const cardContainer = document.getElementById("products");
+    const loader = document.getElementById("loading");
+    var throttleTimer;
+    const throttle = (callback, time) => {
+      if (throttleTimer) return;
+      throttleTimer = true;
+      setTimeout(() => {
+        callback();
+        throttleTimer = false;
+      }, time);
+    };
+    const handleInfiniteScroll = () => {
+      throttle(async () => {
+        const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
+        if (endOfPage) {
+          if (loader) {
+            loader.style.display = "block"
+          }
+          await fetchProducts(afterProduct);
+        }
+        if (!moreProductsLeft) {
+          removeInfiniteScroll();
+        }
+      }, 1000);
+    };
+    const removeInfiniteScroll = () => {
+      window.removeEventListener("scroll", handleInfiniteScroll);
+    };
+    window.addEventListener("scroll", handleInfiniteScroll)
   </script>
   <fourb-header></fourb-header>
   <h2 class="title">Productos</h2>
-  <div class="loading" id="loading"></div>
   <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+  <div class="loading" id="loading"></div>
 </body>
 
 </html>

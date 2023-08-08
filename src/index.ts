@@ -1,6 +1,6 @@
 import fs from 'fs';
 import express from 'express'
-import { Collection, MongoClient, ObjectId } from "mongodb";
+import { Collection, Filter, MongoClient, ObjectId } from "mongodb";
 import { ACCESSSECRET, ACCESS_KEY, ACCESS_TOKEN_EXP_NUMBER, BUCKET_NAME, CONEKTA_API_KEY, MONGO_DB, PORT, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, SECRET_KEY, VIRTUAL_HOST } from "./config";
 import Handlebars from 'handlebars';
 import bcrypt from "bcryptjs"
@@ -340,12 +340,47 @@ app.use(async (req, res, next) => {
 })
 
 app.get('/inventory', async (req, res) => {
+    const search = req.query.search
+    const tag = req.query.tag
+    const limit = Number(req.query.limit)
+    const after = req.query.after
+    const limitParsed = limit ? limit : 20
     const { inventory } = req.app.locals as ContextLocals
-    const products = await inventory.find().toArray()
-    res.header("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.header("Pragma", "no-cache");
-    res.header("Expires", "0");
-    res.status(200).json(products)
+    if (search && typeof search === "string") {
+        const filter: Filter<InventoryMongo> = {
+            name: { $regex: search, $options: "i" }
+        }
+        if (after && typeof after === "string") {
+            filter._id = { $lt: new ObjectId(after) };
+        }
+        const products = await inventory.find(filter).limit(limitParsed).sort({ $natural: -1 }).toArray()
+        res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.header("Pragma", "no-cache");
+        res.header("Expires", "0");
+        res.status(200).json(products)
+    } else if (tag && typeof tag === "string") {
+        const filter: Filter<InventoryMongo> = {
+            tags: { $in: [tag] }
+        }
+        if (after && typeof after === "string") {
+            filter._id = { $lt: new ObjectId(after) };
+        }
+        const products = await inventory.find({ tags: { $in: [tag] } }).limit(limitParsed).sort({ $natural: -1 }).toArray()
+        res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.header("Pragma", "no-cache");
+        res.header("Expires", "0");
+        res.status(200).json(products)
+    } else {
+        const filter: Filter<InventoryMongo> = {}
+        if (after && typeof after === "string") {
+            filter._id = { $lt: new ObjectId(after) };
+        }
+        const products = await inventory.find(filter).limit(limitParsed).sort({ $natural: -1 }).toArray()
+        res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.header("Pragma", "no-cache");
+        res.header("Expires", "0");
+        res.status(200).json(products)
+    }
 });
 
 app.post('/inventory', async (req, res) => {
@@ -1752,16 +1787,13 @@ app.get('*', async (req, res) => {
 });
 
 //Define site pages
-//Copiar estilos de https://www.fourb.online/
-//Añadir propiedad de clasificaciones
+//Copiar estilos de https://www.fourb.online/ y hacerlo responsive
 //Copiar un poco del inventario
 //Keep session if active user?
 //Keep cart if active user?
-//Responsive
+//Do not store session in database?
 //SEO
-//Search
-//Pagination
-//Reduce costs! Beanstalk to single EC2 instance?
+//Reduce costs! Beanstalk to single EC2 instance? Use rust? Drop AWS?
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
