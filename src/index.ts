@@ -14,7 +14,6 @@ import cron from 'node-cron';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
-import { createHTML } from './utils';
 import { CartsByUserMongo, ContextLocals, DecodeJWT, InventoryMongo, ItemsByCartMongo, ReservedInventoryMongo, SessionCookie, SessionMongo, UserJWT } from './types';
 
 const clientS3 = new S3Client({
@@ -1674,7 +1673,6 @@ app.get('*', async (req, res) => {
 
 MongoClient.connect(MONGO_DB || "mongodb://mongo-fourb:27017", {}).then(async (client) => {
     const db = client.db("fourb");
-    await createHTML(db)
     app.locals.users = db.collection("users")
     app.locals.cartsByUser = db.collection("carts_by_user")
     app.locals.inventory = db.collection("inventory")
