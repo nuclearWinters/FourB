@@ -10,8 +10,10 @@ phases:
     commands:
       - npm run build
       - npm run html
+      - ls
 
 artifacts:
+  type: zip
   files:
     - package.json
     - package-lock.json
