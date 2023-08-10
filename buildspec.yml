@@ -9,6 +9,7 @@ phases:
   build:
     commands:
       - npm run build
+      - npm run html
 
 artifacts:
   files:
@@ -16,4 +17,4 @@ artifacts:
     - package-lock.json
     - 'build/**/*'
     - 'static/**/*'
-  discard-paths: yes
+  discard-paths: no

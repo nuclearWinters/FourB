@@ -1819,7 +1819,7 @@ app.get('*', async (req, res) => {
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {
     const db = client.db("fourb");
-    createHTML(db)
+    await createHTML(db)
     app.locals.users = db.collection("users")
     app.locals.cartsByUser = db.collection("carts_by_user")
     app.locals.inventory = db.collection("inventory")
