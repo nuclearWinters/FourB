@@ -168,7 +168,7 @@ class Header extends HTMLElement {
           id="search-form"
           onsubmit="(() => {
             const form = document.getElementById("search-form")
-            window.location.href = '/?search=' + form.search.value
+            window.location.href = '/search?search=' + form.search.value
           })()"
         >
           <input name="search" placeholder="Busqueda..." />
@@ -177,98 +177,98 @@ class Header extends HTMLElement {
           class="header-button"
           id="aretes"
           onclick="(() => {
-            window.location.href = '/?tag=arete'
+            window.location.href = '/search?tag=arete'
           })()"
         >Aretes</button>
         <button
           class="header-button"
           id="anillos"
           onclick="(() => {
-            window.location.href = '/?tag=anillo'
+            window.location.href = '/search?tag=anillo'
           })()"
         >Anillos</button>
         <button
           class="header-button"
           id="collares"
           onclick="(() => {
-            window.location.href = '/?tag=collar'
+            window.location.href = '/search?tag=collar'
           })()"
         >Collares</button>
         <button
           class="header-button"
           id="pulseras"
           onclick="(() => {
-            window.location.href = '/?tag=pulsera'
+            window.location.href = '/search?tag=pulsera'
           })()"
         >Pulseras</button>
         <button
           class="header-button"
           id="percings"
           onclick="(() => {
-            window.location.href = '/?tag=piercing'
+            window.location.href = '/search?tag=piercing'
           })()"
         >Piercings</button>
         <button
           class="header-button"
           id="tobilleras"
           onclick="(() => {
-            window.location.href = '/?tag=tobillera'
+            window.location.href = '/search?tag=tobillera'
           })()"
         >Tobilleras</button>
         <button
           class="header-button"
           id="oro-10k"
           onclick="(() => {
-            window.location.href = '/?tag=oro10k'
+            window.location.href = '/search?tag=oro10k'
           })()"
         >Oro 10k</button>
         <button
           class="header-button"
           id="ajustables"
           onclick="(() => {
-            window.location.href = '/?tag=ajustable'
+            window.location.href = '/search?tag=ajustable'
           })()"
         >Ajustables</button>
         <button
           class="header-button"
           id="talla-5"
           onclick="(() => {
-            window.location.href = '/?tag=talla5'
+            window.location.href = '/search?tag=talla5'
           })()"
         >Talla 5</button>
         <button
           class="header-button"
           id="talla-6"
           onclick="(() => {
-            window.location.href = '/?tag=talla6'
+            window.location.href = '/search?tag=talla6'
           })()"
         >Talla 6</button>
         <button
           class="header-button"
           id="talla-7"
           onclick="(() => {
-            window.location.href = '/?tag=talla7'
+            window.location.href = '/search?tag=talla7'
           })()"
         >Talla 7</button>
         <button
           class="header-button"
           id="talla-8"
           onclick="(() => {
-            window.location.href = '/?tag=talla8'
+            window.location.href = '/search?tag=talla8'
           })()"
         >Talla 8</button>
         <button
           class="header-button"
           id="talla-9"
           onclick="(() => {
-            window.location.href = '/?tag=talla9'
+            window.location.href = '/search?tag=talla9'
           })()"
         >Talla 9</button>
         <button
           class="header-button"
           id="talla-10"
           onclick="(() => {
-            window.location.href = '/?tag=talla10'
+            window.location.href = '/search?tag=talla10'
           })()"
         >Talla 10</button>
       </div>

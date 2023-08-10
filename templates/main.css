@@ -20,8 +20,8 @@
 }
 
 .header-button {
-  color: white;
-  background: black;
+  color: rgb(181, 157, 139);
+  background: transparent;
   border: none;
   cursor: pointer;
   font-size: 16px;
@@ -33,18 +33,18 @@
 }
 
 .fourb-header {
-  background: black;
+  background: white;
   height: 60px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 20px;
   padding: 0px 20px;
 }
 
-.fourb-header button:nth-child(2) {
+/*.fourb-header button:nth-child(2) {
   margin-left: auto;
-}
+}*/
 
 .fourb-logo {
   height: 46px;
@@ -110,7 +110,6 @@
 }
 
 .product-card {
-  border: 1px solid black;
   border-radius: 6px;
   margin: 10px 20px;
   padding: 10px 20px;
@@ -120,17 +119,24 @@ body {
   margin: 0px
 }
 
+a,
+a:hover,
+a:focus,
+a:active {
+  text-decoration: none;
+  color: inherit;
+}
+
 .name {
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
+  font-size: 16px;
   margin-bottom: 12px;
+  padding-left: 10px;
 }
 
 .price {
   font-size: 18px;
-  text-align: center;
   margin-bottom: 12px;
+  padding-left: 10px;
 }
 
 .input-container-modal {
@@ -154,8 +160,8 @@ body {
   margin-bottom: 10px;
   display: block;
   margin: auto;
-  width: 200px;
-  height: 200px;
+  width: 320px;
+  height: 320px;
   margin-bottom: 16px;
   object-fit: contain;
 }

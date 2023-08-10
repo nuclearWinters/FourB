@@ -49,6 +49,14 @@ export const createHTML = (db: Db) => {
         });
         fs.writeFileSync(`static/main.html`, result)
     });
+    fs.readFile('templates/search.html', 'utf8', async (err, html) => {
+        if (err) throw err;
+        const template = Handlebars.compile(html);
+        const result = template({
+            domain: VIRTUAL_HOST,
+        });
+        fs.writeFileSync(`static/search.html`, result)
+    });
     fs.readFile('templates/cart.html', 'utf8', async (err, html) => {
         if (err) throw err;
         const template = Handlebars.compile(html);

@@ -8,41 +8,26 @@
 
 <body>
   <script type="module">
-    import { fetchWrapper, insertHTML, insertBeforeHTML } from "./main.js"
-    const queryString = window.location.search
-    const urlParams = new URLSearchParams(queryString)
-    const tag = urlParams.get('tag') || ""
-    const search = urlParams.get('search') || ""
-    let moreProductsLeft = true
-    let afterProduct = ""
+    import { fetchWrapper, insertBeforeHTML } from "./main.js"
     const fetchProducts = async (after) => {
-      const json = await fetchWrapper(`https://{{domain}}/inventory?tag=${tag}&search=${search}&after=${after}`)
+      const json = await fetchWrapper(`https://{{domain}}/inventory?limit=8`)
       const loading = document.getElementById("loading")
       if (loading) {
         loading.style.display = "none"
-      }
-      if (json.length === 0) {
-        moreProductsLeft = false
-      }
-      const lastItem = json.at(-1)
-      if (lastItem) {
-        afterProduct = lastItem._id
       }
       const list = document.querySelector('#products')
       json.forEach(product => {
         insertBeforeHTML(
           list,
           `<div class="product-card">
-              <div class="name">${product.name}</div>
-              <div class="price">
-                <span>Precio: </span>
-                <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
-                ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
-              </div>
-              <img class="img-product" src="${product.img}" />
-              <button class="fourb-button" onclick="(() => {
-                window.location.href = '/product-${product._id}'
-              })()">VER</button>
+              <a href="/product-${product._id}">
+                <img class="img-product" src="${product.img}" />
+                <div class="name">${product.name}</div>
+                <div class="price">
+                  <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
+                  ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
+                </div>
+              </a>
               <button id="add-to-cart-${product._id}" class="fourb-button">
                 AÑADIR AL CARRITO
               </button>
@@ -69,41 +54,106 @@
         }
       })
     }
-    fetchProducts(afterProduct)
-    const cardContainer = document.getElementById("products");
-    const loader = document.getElementById("loading");
-    var throttleTimer;
-    const throttle = (callback, time) => {
-      if (throttleTimer) return;
-      throttleTimer = true;
-      setTimeout(() => {
-        callback();
-        throttleTimer = false;
-      }, time);
-    };
-    const handleInfiniteScroll = () => {
-      throttle(async () => {
-        const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
-        if (endOfPage) {
-          if (loader) {
-            loader.style.display = "block"
+    const fetchDiscountProducts = async (after) => {
+      const json = await fetchWrapper(`https://{{domain}}/inventory?discounts=true&limit=8`)
+      const loading = document.getElementById("loading-discount")
+      if (loading) {
+        loading.style.display = "none"
+      }
+      const list = document.querySelector('#discounts')
+      json.forEach(product => {
+        insertBeforeHTML(
+          list,
+          `<div class="product-card">
+              <a href="/product-${product._id}">
+                <img class="img-product" src="${product.img}" />
+                <div class="name">${product.name}</div>
+                <div class="price">
+                  <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
+                  ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
+                </div>
+              </a>
+              <button id="add-to-cart-${product._id}" class="fourb-button">
+                AÑADIR AL CARRITO
+              </button>
+            </div>`
+        )
+        const buyButton = document.getElementById(`add-to-cart-${product._id}`)
+        buyButton.onclick = async () => {
+          try {
+            const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
+              method: "POST",
+              body: JSON.stringify({
+                product_id: product._id,
+                qty: 1
+              })
+            })
+            alert("Añadido al carrito")
+          } catch (e) {
+            if (e instanceof Error) {
+              alert(e.message)
+            } else {
+              alert("Error")
+            }
           }
-          await fetchProducts(afterProduct);
         }
-        if (!moreProductsLeft) {
-          removeInfiniteScroll();
-        }
-      }, 1000);
-    };
-    const removeInfiniteScroll = () => {
-      window.removeEventListener("scroll", handleInfiniteScroll);
-    };
-    window.addEventListener("scroll", handleInfiniteScroll)
+      })
+    }
+    fetchProducts()
+    fetchDiscountProducts()
   </script>
   <fourb-header></fourb-header>
-  <h2 class="title">Productos</h2>
+  <div style="background-image: url('./banner.webp');
+      height: 184px;background-size: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    ">
+    <div style="color: white;
+      font-size: 30px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+    ">NUEVAS JOYITAS</div>
+    <button onclick="(() => {
+      window.location.href = '/search'
+    })()" style="background: rgba(0,0,0,0.3);
+      border: none;
+      color: white;
+      font-size: 20px;
+      padding: 10px;
+      cursor: pointer;
+    ">Ver colección</button>
+  </div>
   <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
   <div class="loading" id="loading"></div>
+  <div style="height: 184px;
+      background-color: rgb(230, 222, 202);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    ">
+    <div style="color: black;
+      font-size: 30px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      padding: 10px;
+    ">REBAJAS</div>
+    <button onclick="(() => {
+        window.location.href = '/search?discounts=true'
+      })()" style="border: none;
+        color: black;
+        font-size: 20px;
+        padding: 10px;
+        cursor: pointer;
+        background-color: white;
+        border-radius: 4px;">Ver colección</button>
+  </div>
+  <div id="discounts" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+  <div class="loading" id="loading-discount"></div>
 </body>
 
 </html>

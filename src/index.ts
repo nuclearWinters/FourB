@@ -344,6 +344,7 @@ app.get('/inventory', async (req, res) => {
     const tag = req.query.tag
     const limit = Number(req.query.limit)
     const after = req.query.after
+    const discounts = req.query.discounts
     const limitParsed = limit ? limit : 20
     const { inventory } = req.app.locals as ContextLocals
     if (search && typeof search === "string") {
@@ -365,7 +366,19 @@ app.get('/inventory', async (req, res) => {
         if (after && typeof after === "string") {
             filter._id = { $lt: new ObjectId(after) };
         }
-        const products = await inventory.find({ tags: { $in: [tag] } }).limit(limitParsed).sort({ $natural: -1 }).toArray()
+        const products = await inventory.find(filter).limit(limitParsed).sort({ $natural: -1 }).toArray()
+        res.header("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.header("Pragma", "no-cache");
+        res.header("Expires", "0");
+        res.status(200).json(products)
+    } else if (discounts === "true") {
+        const filter: Filter<InventoryMongo> = {
+            use_discount: true
+        }
+        if (after && typeof after === "string") {
+            filter._id = { $lt: new ObjectId(after) };
+        }
+        const products = await inventory.find(filter).limit(limitParsed).sort({ $natural: -1 }).toArray()
         res.header("Cache-Control", "no-cache, no-store, must-revalidate");
         res.header("Pragma", "no-cache");
         res.header("Expires", "0");
@@ -1761,6 +1774,14 @@ app.get('*', async (req, res) => {
             const template = fs.readFileSync(`static/${req.path}`, 'binary');
             return res.status(200).set({ 'Content-Type': 'image/x-png' }).end(template, 'binary');
         }
+        if (req.path.includes(".webp")) {
+            const template = fs.readFileSync(`static/${req.path}`, 'binary');
+            return res.status(200).set({ 'Content-Type': 'image/webp' }).end(template, 'binary');
+        }
+        if (req.path.includes(".svg")) {
+            const template = fs.readFileSync(`static/${req.path}`, 'binary');
+            return res.status(200).set({ 'Content-Type': 'image/svg' }).end(template, 'binary');
+        }
         if (req.path.includes(".js")) {
             const template = fs.readFileSync(`static/${req.path}`, 'utf-8');
             return res.status(200).set({ 'Content-Type': 'application/javascript' }).end(template);
@@ -1793,6 +1814,7 @@ app.get('*', async (req, res) => {
 //Keep cart if active user?
 //Do not store session in database?
 //SEO
+//Deploy process
 //Reduce costs! Beanstalk to single EC2 instance? Use rust? Drop AWS?
 
 MongoClient.connect(MONGO_DB, {}).then(async (client) => {

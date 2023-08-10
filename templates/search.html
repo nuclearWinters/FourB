@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="main.css">
+</head>
+<script type="module" src="main.js"></script>
+
+<body>
+    <script type="module">
+        import { fetchWrapper, insertHTML, insertBeforeHTML } from "./main.js"
+        const queryString = window.location.search
+        const urlParams = new URLSearchParams(queryString)
+        const tag = urlParams.get('tag') || ""
+        const search = urlParams.get('search') || ""
+        const discounts = urlParams.get('discounts') || ""
+        let moreProductsLeft = true
+        let afterProduct = ""
+        const fetchProducts = async (after) => {
+            const json = await fetchWrapper(`https://{{domain}}/inventory?tag=${tag}&search=${search}&after=${after}&discounts=${discounts}`)
+            const loading = document.getElementById("loading")
+            if (loading) {
+                loading.style.display = "none"
+            }
+            if (json.length === 0) {
+                moreProductsLeft = false
+            }
+            const lastItem = json.at(-1)
+            if (lastItem) {
+                afterProduct = lastItem._id
+            }
+            const list = document.querySelector('#products')
+            json.forEach(product => {
+                insertBeforeHTML(
+                    list,
+                    `<div class="product-card">
+                      <a href="/product-${product._id}">
+                        <img class="img-product" src="${product.img}" />
+                        <div class="name">${product.name}</div>
+                        <div class="price">
+                          <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
+                          ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
+                        </div>
+                      </a>
+                      <button id="add-to-cart-${product._id}" class="fourb-button">
+                        AÑADIR AL CARRITO
+                      </button>
+                    </div>`
+                )
+                const buyButton = document.getElementById(`add-to-cart-${product._id}`)
+                buyButton.onclick = async () => {
+                    try {
+                        const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
+                            method: "POST",
+                            body: JSON.stringify({
+                                product_id: product._id,
+                                qty: 1
+                            })
+                        })
+                        alert("Añadido al carrito")
+                    } catch (e) {
+                        if (e instanceof Error) {
+                            alert(e.message)
+                        } else {
+                            alert("Error")
+                        }
+                    }
+                }
+            })
+        }
+        fetchProducts(afterProduct)
+        const cardContainer = document.getElementById("products");
+        const loader = document.getElementById("loading");
+        var throttleTimer;
+        const throttle = (callback, time) => {
+            if (throttleTimer) return;
+            throttleTimer = true;
+            setTimeout(() => {
+                callback();
+                throttleTimer = false;
+            }, time);
+        };
+        const handleInfiniteScroll = () => {
+            throttle(async () => {
+                const endOfPage = window.innerHeight + window.pageYOffset >= document.body.offsetHeight;
+                if (endOfPage) {
+                    if (loader) {
+                        loader.style.display = "block"
+                    }
+                    await fetchProducts(afterProduct);
+                }
+                if (!moreProductsLeft) {
+                    removeInfiniteScroll();
+                }
+            }, 1000);
+        };
+        const removeInfiniteScroll = () => {
+            window.removeEventListener("scroll", handleInfiniteScroll);
+        };
+        window.addEventListener("scroll", handleInfiniteScroll)
+    </script>
+    <fourb-header></fourb-header>
+    <div id="products" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+    <div class="loading" id="loading"></div>
+</body>
+
+</html>
