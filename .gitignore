@@ -1,6 +1,7 @@
 /node_modules
 /data
 static/*
+!static.md
 /loadbalancer/certs/*
 /build
 Archivo.zip
