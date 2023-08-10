@@ -1,6 +1,6 @@
 import 'dotenv/config'
 
-export const MONGO_DB = process.env.MONGO_DB || "mongodb://mongo-fourb:27017";
+export const MONGO_DB = process.env.MONGO_DB;
 export const REFRESH_TOKEN_EXP_NUMBER = 43200;
 export const ACCESS_TOKEN_EXP_NUMBER = 900;
 export const REFRESHSECRET = process.env.REFRESHSECRET || "REFRESHSECRET";

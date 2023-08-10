@@ -2,7 +2,7 @@ import fs from 'fs';
 import { VIRTUAL_HOST } from "./config";
 import Handlebars from 'handlebars';
 import { Db } from 'mongodb';
-import { InventoryMongo } from '.';
+import { InventoryMongo } from './types';
 
 export const createHTML = async (db: Db) => {
     const productsHtml = fs.readFileSync('templates/product.html', 'utf8');
