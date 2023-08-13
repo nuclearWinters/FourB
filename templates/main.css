@@ -169,3 +169,28 @@ a:active {
 .price-discounted {
   text-decoration-line: line-through;
 }
+
+.img-uploaded {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.images-container {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.checkbox-big-and-small:has(#checkboxBigAndSmall:checked)~.input-container.imgs {
+  display: none;
+}
+
+.checkbox-big-and-small:not(:has(#checkboxBigAndSmall:checked))~.input-container.img-big {
+  display: none;
+}
+
+.checkbox-big-and-small:not(:has(#checkboxBigAndSmall:checked))~.input-container.img-small {
+  display: none;
+}

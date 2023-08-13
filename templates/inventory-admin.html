@@ -8,7 +8,7 @@
 
 <body>
   <script type="module">
-    import { fetchWrapper, toCurrency, insertHTML } from "./main.js"
+    import { fetchWrapper, toCurrency, insertBeforeHTML } from "./main.js"
     fetchWrapper('https://{{domain}}/inventory')
       .then(json => {
         const loading = document.getElementById("loading")
@@ -17,17 +17,21 @@
         }
         const list = document.querySelector('#inventory')
         json.forEach(product => {
-          insertHTML(
+          insertBeforeHTML(
             list,
             `<div class="product-card">
               <form method="PATCH" action="https://{{domain}}/inventory" id="update-product-${product._id}">
                 <div class="input-container">
                   <label for="name">Nombre</label>
-                  <input id="name-product" name="name" required type="text" value="${product.name}" />
+                  <input id="name-product" name="name" required type="text" value="${product.name}"  />
+                </div>
+                <div class="input-container">
+                  <label for="code">Code</label>
+                  <input id="code-product" name="code" required type="text" value="${product.code}" />
                 </div>
                 <div class="input-container">
                   <label for="currency-${product._id}">Precio</label>
-                  <input id="currency-${product._id}" type="number" pattern="\d*" step="any" name="currency" value="${toCurrency(String(product.price), '.')}" required />
+                  <input onwheel="return false;" id="currency-${product._id}" type="number" pattern="\d*" step="any" name="currency" value="${toCurrency(String(product.price), '.')}" required />
                 </div>
                 <div class="input-container">
                   <label for="discount-${product._id}">Precio de descuento</label>
@@ -35,13 +39,27 @@
                     <input type="checkbox" id="checkboxDiscount" name="checkboxDiscount" ${product.use_discount ? "checked" : ""} />
                     <label for="checkboxDiscount">Usar descuento</label>
                   </div>
-                  <input id="discount-${product._id}" type="number" pattern="\d*" step="any" name="discount" value="${toCurrency(String(product.discount_price), '.')}" required />
+                  <input onwheel="return false;" id="discount-${product._id}" type="number" pattern="\d*" step="any" name="discount" value="${toCurrency(String(product.discount_price), '.')}" required />
                 </div>
                 <div class="input-container">
                   <label for="increment-${product._id}">Añadir al inventario</label>
-                  <input id="increment-${product._id}" type="number" value="0" name="increment" />
+                  <input onwheel="return false;" id="increment-${product._id}" type="number" value="0" name="increment" />
                 </div>
-                <img class="img-product" src="${product.img}" />
+                <div id="images-container" class="input-container">
+                  ${(product?.img?.map?.((img, index) => {
+              return `<div id="image-container-${index}" style="position: relative">
+                      <button
+                        id="remove-image-${index}"
+                        style="font-weigth: bold; position: absolute; top: 0px; right: 0px;cursor: pointer;
+                        padding: 6px 10px;
+                        background: white;
+                        border-radius: 100%;
+                        border: 1px solid black;
+                        box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2)">x</button>
+                      <img class="img-uploaded" id="img-uploaded-${index}" alt="" width="100%" src="${img}" />
+                    </div>`
+            }) || []).join()}
+                </div>
                 <div id="available-${product._id}" class="price">
                   Disponible: ${product.available}</span>
                 </div>
@@ -138,6 +156,7 @@
                   id: product._id,
                   name: form.name.value,
                   increment: Number(form.increment.value),
+                  code: form.code.value,
                   price: Number(form.currency.value) * 100,
                   discountPrice: Number(form.discount.value) * 100,
                   useDiscount: form.checkboxDiscount.checked,
@@ -180,12 +199,17 @@
       <input id="name-product" name="name" required type="text" />
     </div>
     <div class="input-container">
+      <label for="code">Código</label>
+      <input id="code-product" name="code" required type="text" />
+    </div>
+    <div class="input-container">
       <label for="qty">Cantidad</label>
-      <input id="qty-product" name="qty" required type="number" />
+      <input id="qty-product" name="qty" required type="number" onwheel="return false;" />
     </div>
     <div class="input-container">
       <label for="currency">Precio</label>
-      <input id="currency" type="number" pattern="\d*" step="any" name="currency" value="0.00" required />
+      <input id="currency" type="number" pattern="\d*" step="any" name="currency" value="0.00" required
+        onwheel="return false;" />
     </div>
     <div class="input-container">
       <label for="discount">Precio de descuento</label>
@@ -193,15 +217,31 @@
         <input type="checkbox" id="checkboxDiscount" name="checkboxDiscount" />
         <label for="checkboxDiscount">Usar descuento</label>
       </div>
-      <input id="discount" type="number" pattern="\d*" step="any" name="discount" value="0.00" required />
+      <input id="discount" type="number" pattern="\d*" step="any" name="discount" value="0.00" required
+        onwheel="return false;" />
     </div>
-    <div class="input-container">
-      <label for="image">Imagen</label>
-      <input name="image" id="file-input" type="file" accept="png,jpg,jpeg" />
+    <div class="input-container checkbox-big-and-small">
+      <label for="">Opciones</label>
+      <div>
+        <input type="checkbox" id="checkboxBigAndSmall" name="checkboxBigAndSmall" />
+        <label for="checkboxBigAndSmall">Tiene opcion pequeña y grande</label>
+      </div>
     </div>
-    <div class="input-container">
-      <input type="text" required hidden name="img" id="img-uploaded-input" />
-      <img id="img-uploaded" alt="" width="100%" />
+    <div class="input-container img-big">
+      <label for="image-big">Imagenes version grande</label>
+      <input name="image-big" multiple="multiple" id="file-input-big" type="file" accept="png,jpg,jpeg" />
+    </div>
+    <div id="images-container-big" class="input-container images-container"></div>
+    <div class="input-container img-small">
+      <label for="image-small">Imagenes version chica</label>
+      <input name="image-small" multiple="multiple" id="file-input-small" type="file" accept="png,jpg,jpeg" />
+    </div>
+    <div id="images-container-small" class="input-container images-container"></div>
+    <div class="input-container imgs">
+      <label for="image">Imagenes</label>
+      <input name="image" multiple="multiple" id="file-input" type="file" accept="png,jpg,jpeg" />
+    </div>
+    <div id="images-container" class="input-container images-container">
     </div>
     <div class="input-container">
       <label for="discount">Tags</label>
@@ -269,10 +309,27 @@
   <div class="loading" id="loading"></div>
   <div style="display: flex; justify-content: center; flex-wrap: wrap;" id="inventory"></div>
   <script type="module">
-    import { fetchWrapper, toCurrency } from "./main.js"
+    import { fetchWrapper, toCurrency, insertBeforeHTML } from "./main.js"
     const form = document.getElementById("create-product")
     form.addEventListener("submit", async (e) => {
       e.preventDefault()
+      const images = document.getElementById("images-container")
+      const imagesArray = []
+      const imagesArraySmall = []
+      const imagesArrayBig = []
+      for (const img of images?.children?.children || []) {
+        imagesArray.push(img.currentSrc)
+      }
+      if (form.useSmallAndBig) {
+        const imagesSmall = document.getElementById("images-container-small")
+        const imagesBig = document.getElementById("images-container-big")
+        for (const img of (imagesSmall?.children?.children || [])) {
+          imagesArraySmall.push(img.currentSrc)
+        }
+        for (const img of (imagesBig?.children?.children || [])) {
+          imagesArrayBig.push(img.currentSrc)
+        }
+      }
       try {
         await fetchWrapper("https://{{domain}}/inventory", {
           method: "POST",
@@ -280,7 +337,11 @@
             name: form.name.value,
             qty: Number(form.qty.value),
             price: Number(form.currency.value) * 100,
-            img: form.img.value,
+            img: imagesArray,
+            imgBig: imagesArrayBig,
+            imgSmall: imagesArraySmall,
+            code: form.code.value,
+            useSmallAndBig: form.checkboxBigAndSmall.checked,
             discountPrice: Number(form.discount.value) * 100,
             useDiscount: form.checkboxDiscount.checked,
             checkboxArete: form.checkboxArete.checked,
@@ -299,10 +360,7 @@
             checkboxTalla10: form.checkboxTalla10.checked,
           })
         })
-        const imgUploaded = document.getElementById("img-uploaded")
-        if (imgUploaded) {
-          imgUploaded.src = ""
-        }
+        images.replaceChildren();
         form.reset()
         alert("¡Creado con exito!")
       } catch (e) {
@@ -327,38 +385,69 @@
         discountInput.value = valueAsCurrency
       }
     }
-    const fileInput = document.getElementById("file-input")
-    if (fileInput) {
-      fileInput.addEventListener("input", async (event) => {
-        try {
-          const file = event.target.files[0]
-          const response = await fetchWrapper("https://{{domain}}/signed-url", {
-            method: "POST",
-            body: JSON.stringify({
-              fileType: file.type,
+    const fileInputCallback = (name) => async (event) => {
+      try {
+        console.log("name", name)
+        const imagesContainer = document.getElementById(name)
+        const files = event.target.files
+        for (const index in files) {
+          const file = files[index]
+          if (file.type) {
+            const img = `<div id="image-container-${file.lastModified}" style="position: relative">
+                <button
+                  id="remove-image-${file.lastModified}"
+                  style="font-weigth: bold; position: absolute; top: 0px; right: 0px;cursor: pointer;
+                  padding: 6px 10px;
+                  background: white;
+                  border-radius: 100%;
+                  border: 1px solid black;
+                  box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2)">x</button>
+                <img class="img-uploaded" id="img-uploaded-${file.lastModified}" alt="" width="100%" />
+              </div>`
+            insertBeforeHTML(imagesContainer, img)
+            const response = await fetchWrapper("https://{{domain}}/signed-url", {
+              method: "POST",
+              body: JSON.stringify({
+                fileType: file.type,
+              })
             })
-          })
-          const awsResponse = await fetch(response.uploadUrl, {
-            method: "PUT",
-            body: file,
-          })
-          const url = new URL(response.uploadUrl);
-          const imgUploadedInput = document.getElementById("img-uploaded-input")
-          const imgUploaded = document.getElementById("img-uploaded")
-          if (imgUploadedInput) {
-            imgUploadedInput.value = url.origin + url.pathname
-          }
-          if (imgUploaded) {
-            imgUploaded.src = url.origin + url.pathname
-          }
-        } catch (e) {
-          if (e instanceof Error) {
-            alert(e.message)
-          } else {
-            alert("Error")
+            const awsResponse = await fetch(response.uploadUrl, {
+              method: "PUT",
+              body: file,
+            })
+            const url = new URL(response.uploadUrl);
+            const imgUploaded = document.getElementById("img-uploaded-" + file.lastModified)
+            if (imgUploaded) {
+              imgUploaded.src = url.origin + url.pathname
+            }
+            const imgRemove = document.getElementById("remove-image-" + file.lastModified)
+            const imgContainer = document.getElementById("image-container-" + file.lastModified)
+            if (imgRemove) {
+              imgRemove.onclick = () => {
+                imgContainer.remove()
+              }
+            }
           }
         }
-      })
+      } catch (e) {
+        if (e instanceof Error) {
+          alert(e.message)
+        } else {
+          alert("Error")
+        }
+      }
+    }
+    const fileInput = document.getElementById("file-input")
+    if (fileInput) {
+      fileInput.addEventListener("input", fileInputCallback("images-container"))
+    }
+    const fileInputBig = document.getElementById("file-input-big")
+    if (fileInputBig) {
+      fileInputBig.addEventListener("input", fileInputCallback("images-container-big"))
+    }
+    const fileInputSmall = document.getElementById("file-input-small")
+    if (fileInputSmall) {
+      fileInputSmall.addEventListener("input", fileInputCallback("images-container-small"))
     }
   </script>
 </body>

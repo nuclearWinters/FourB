@@ -81,4 +81,25 @@ export const createHTML = async (db: Db) => {
     fs.writeFileSync(`static/main.css`, css)
     fs.copyFileSync('templates/favicon.ico', 'static/favicon.ico');
     fs.copyFileSync('templates/fourb.png', 'static/fourb.png');
+    fs.copyFileSync('templates/banner.webp', 'static/banner.webp');
+}
+
+export const generateProductHTML = (value: InventoryMongo) => {
+    const productHTML = fs.readFileSync('templates/product.html', 'utf8');
+    const template = Handlebars.compile(productHTML);
+    const templateResult = template({
+        available: value.available,
+        total: value.total,
+        name: value.name,
+        price: `$${(value.price / 100).toFixed(2)}`,
+        discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
+        buttonText: value.available ? "Añadir al carrito" : "Agotado",
+        buttonProps: value.available ? "" : "disabled",
+        domain: VIRTUAL_HOST,
+        img: value.img,
+        priceClass: value.use_discount ? "price-discounted" : "",
+        discontPriceClass: value.use_discount ? "" : "",
+        code: value.code,
+    });
+    fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
 }

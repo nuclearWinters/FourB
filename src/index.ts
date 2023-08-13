@@ -1,8 +1,7 @@
 import fs from 'fs';
 import express from 'express'
 import { Filter, MongoClient, ObjectId } from "mongodb";
-import { ACCESSSECRET, ACCESS_KEY, ACCESS_TOKEN_EXP_NUMBER, BUCKET_NAME, CONEKTA_API_KEY, MONGO_DB, PORT, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, SECRET_KEY, VIRTUAL_HOST } from "./config";
-import Handlebars from 'handlebars';
+import { ACCESSSECRET, ACCESS_KEY, ACCESS_TOKEN_EXP_NUMBER, BUCKET_NAME, CONEKTA_API_KEY, MONGO_DB, PORT, REFRESHSECRET, REFRESH_TOKEN_EXP_NUMBER, SECRET_KEY } from "./config";
 import bcrypt from "bcryptjs"
 import jsonwebtoken, { SignOptions } from "jsonwebtoken"
 import cookieParser from "cookie-parser"
@@ -14,7 +13,8 @@ import cron from 'node-cron';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
-import { CartsByUserMongo, ContextLocals, DecodeJWT, InventoryMongo, ItemsByCartMongo, ReservedInventoryMongo, SessionCookie, SessionMongo, UserJWT } from './types';
+import { CartsByUserMongo, ContextLocals, DecodeJWT, InventoryMongo, ItemsByCartMongo, PurchasesMongo, ReservedInventoryMongo, SessionCookie, SessionMongo, UserJWT } from './types';
+import { generateProductHTML } from './utils';
 
 const clientS3 = new S3Client({
     apiVersion: "2006-03-01",
@@ -255,7 +255,10 @@ app.post('/inventory', async (req, res) => {
         const qty = req.body.qty
         const name = req.body.name
         const price = req.body.price
-        const img = req.body.img
+        const useSmallAndBig = req.body.useSmallAndBig
+        const img = req.body.img as string[]
+        const imgBig = req.body.imgBig as string[]
+        const imgSmall = req.body.imgSmall as string[]
         const discountPrice = req.body.discountPrice
         const useDiscount = req.body.useDiscount
         const checkboxArete = req.body.checkboxArete
@@ -272,6 +275,7 @@ app.post('/inventory', async (req, res) => {
         const checkboxTalla8 = req.body.checkboxTalla8
         const checkboxTalla9 = req.body.checkboxTalla9
         const checkboxTalla10 = req.body.checkboxTalla10
+        const code = req.body.code
         if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
@@ -281,8 +285,38 @@ app.post('/inventory', async (req, res) => {
         if (typeof name !== "string") {
             throw new Error("Name is required and must be a string")
         }
-        if (typeof img !== "string") {
-            throw new Error("Image is required and must be a string")
+        if (typeof useSmallAndBig !== "boolean") {
+            throw new Error("useSmallAndBig is required and must be a boolean")
+        }
+        if (useSmallAndBig) {
+            if (!Array.isArray(imgBig)) {
+                throw new Error("Images for big option are required and must be an array")
+            }
+            if (imgBig.length === 0) {
+                throw new Error("Images for big option must include at least one image")
+            }
+            if (!imgBig.every(item => typeof item === "string")) {
+                throw new Error("Images for big option must be strings")
+            }
+            if (!Array.isArray(imgSmall)) {
+                throw new Error("Images for small option are required and must be an array")
+            }
+            if (imgSmall.length === 0) {
+                throw new Error("Images for small option must include at least one image")
+            }
+            if (!imgSmall.every(item => typeof item === "string")) {
+                throw new Error("Images for small option must be strings")
+            }
+        } else {
+            if (!Array.isArray(img)) {
+                throw new Error("Images are required and must be an array")
+            }
+            if (img.length === 0) {
+                throw new Error("Images must include at least one image")
+            }
+            if (!img.every(item => typeof item === "string")) {
+                throw new Error("Images must be strings")
+            }
         }
         if (typeof discountPrice !== "number") {
             throw new Error("Discount price must be a number")
@@ -331,6 +365,9 @@ app.post('/inventory', async (req, res) => {
         }
         if (typeof checkboxArete !== "boolean") {
             throw new Error("checkboxArete must be a boolean")
+        }
+        if (typeof code !== "string") {
+            throw new Error("Code must be a string")
         }
         const tags = []
         if (checkboxArete) {
@@ -385,25 +422,26 @@ app.post('/inventory', async (req, res) => {
             discount_price: discountPrice,
             use_discount: useDiscount,
             tags,
+            code,
+            use_small_and_big: useSmallAndBig,
+            img_big: imgBig,
+            img_small: imgSmall
         })
-        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
-            if (err) throw err;
-            const template = Handlebars.compile(html);
-            const result = template({
-                available: qty,
-                total: qty,
-                name,
-                price: `$${(price / 100).toFixed(2)}`,
-                discountPrice: useDiscount ? `$${(discountPrice / 100).toFixed(2)}` : "",
-                buttonText: qty ? "Añadir al carrito" : "Agotado",
-                buttonProps: qty ? "" : "disabled",
-                domain: VIRTUAL_HOST,
-                img,
-                priceClass: useDiscount ? "price-discounted" : "",
-                discontPriceClass: useDiscount ? "" : "",
-            });
-            fs.writeFileSync(`static/product-${inventoryResult.insertedId}.html`, result)
-        });
+        generateProductHTML({
+            _id: inventoryResult.insertedId,
+            available: qty,
+            total: qty,
+            name,
+            price,
+            img,
+            discount_price: discountPrice,
+            use_discount: useDiscount,
+            tags,
+            code,
+            use_small_and_big: useSmallAndBig,
+            img_big: imgBig,
+            img_small: imgSmall
+        })
         res.status(200).json("OK!")
     } catch (e) {
         if (e instanceof Error) {
@@ -577,24 +615,7 @@ app.patch('/inventory', async (req, res) => {
         if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
-        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
-            if (err) throw err;
-            const template = Handlebars.compile(html);
-            const templateResult = template({
-                available: value.available,
-                total: value.total,
-                name: value.name,
-                price: `$${(value.price / 100).toFixed(2)}`,
-                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
-                buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled",
-                domain: VIRTUAL_HOST,
-                img: value.img,
-                priceClass: value.use_discount ? "price-discounted" : "",
-                discontPriceClass: value.use_discount ? "" : "",
-            });
-            fs.writeFileSync(`static/product-${result.value?._id}.html`, templateResult)
-        });
+        generateProductHTML(value)
         res.status(200).json({
             product: result.value
         })
@@ -895,24 +916,7 @@ app.post('/add-to-cart', async (req, res) => {
         if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
-        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
-            if (err) throw err;
-            const template = Handlebars.compile(html);
-            const templateResult = template({
-                available: value.available,
-                total: value.total,
-                name: value.name,
-                price: `$${(value.price / 100).toFixed(2)}`,
-                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
-                buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled",
-                domain: VIRTUAL_HOST,
-                img: value.img,
-                priceClass: value.use_discount ? "price-discounted" : "",
-                discontPriceClass: value.use_discount ? "" : "",
-            });
-            fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
-        });
+        generateProductHTML(value)
         const expireDate = new Date()
         expireDate.setDate(expireDate.getDate() + 7)
         const reserved = await reservedInventory.updateOne({
@@ -951,6 +955,7 @@ app.post('/add-to-cart', async (req, res) => {
                     discount_price: value.discount_price,
                     use_discount: value.use_discount,
                     img: value.img,
+                    code: value.code,
                 }
             },
             {
@@ -1027,24 +1032,7 @@ app.patch('/add-to-cart', async (req, res) => {
         if (!value) {
             throw new Error("Not enough inventory or product not found")
         }
-        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
-            if (err) throw err;
-            const template = Handlebars.compile(html);
-            const templateResult = template({
-                available: value.available,
-                total: value.total,
-                name: value.name,
-                price: `$${(value.price / 100).toFixed(2)}`,
-                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
-                buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled",
-                domain: VIRTUAL_HOST,
-                img: value.img,
-                priceClass: value.use_discount ? "price-discounted" : "",
-                discontPriceClass: value.use_discount ? "" : "",
-            });
-            fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
-        });
+        generateProductHTML(value)
         const item_by_cart_oid = new ObjectId(item_by_cart_id)
         const result = await itemsByCart.updateOne(
             {
@@ -1154,24 +1142,7 @@ app.delete('/add-to-cart', async (req, res) => {
         if (!value) {
             throw new Error("Inventory not modified.")
         }
-        fs.readFile('templates/product.html', 'utf8', async (err, html) => {
-            if (err) throw err;
-            const template = Handlebars.compile(html);
-            const templateResult = template({
-                available: value.available,
-                total: value.total,
-                name: value.name,
-                price: `$${(value.price / 100).toFixed(2)}`,
-                discountPrice: value.use_discount ? `$${(value.discount_price / 100).toFixed(2)}` : "",
-                buttonText: value.available ? "Añadir al carrito" : "Agotado",
-                buttonProps: value.available ? "" : "disabled",
-                domain: VIRTUAL_HOST,
-                img: value.img,
-                priceClass: value.use_discount ? "price-discounted" : "",
-                discontPriceClass: value.use_discount ? "" : "",
-            });
-            fs.writeFileSync(`static/product-${value?._id}.html`, templateResult)
-        });
+        generateProductHTML(value)
         res.status(200).json("Ok")
     } catch (e) {
         if (e instanceof Error) {
@@ -1444,7 +1415,7 @@ app.post('/confirmation', async (req, res) => {
             ])
             ])
             const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
-            const purchasedProducts = productsInCart.map(product => ({
+            const purchasedProducts: PurchasesMongo[] = productsInCart.map(product => ({
                 name: product.name,
                 product_id: product.product_id,
                 qty: product.qty,
@@ -1455,6 +1426,10 @@ app.post('/confirmation', async (req, res) => {
                 session_id: session_oid,
                 date: new Date(),
                 img: product.img,
+                code: product.code,
+                use_small_and_big: product.use_small_and_big,
+                img_big: product.img_big,
+                img_small: product.img_small,
             }))
             await purchases.insertMany(purchasedProducts)
             const newAccessToken = jwt.sign(
@@ -1544,6 +1519,10 @@ app.post('/confirmation', async (req, res) => {
                 session_id: session_oid,
                 date: new Date(),
                 img: product.img,
+                code: product.code,
+                use_small_and_big: product.use_small_and_big,
+                img_big: product.img_big,
+                img_small: product.img_small,
             }))
             await purchases.insertMany(purchasedProducts)
             if (session.value) {
@@ -1668,7 +1647,8 @@ app.get('*', async (req, res) => {
 //Keep cart if active user?
 //Do not store session in database?
 //SEO
-//Deploy process
+//Big y small
+//3 opciones de entrega
 //Reduce costs! Beanstalk to single EC2 instance? Use rust? Drop AWS?
 
 MongoClient.connect(MONGO_DB || "mongodb://mongo-fourb:27017", {}).then(async (client) => {

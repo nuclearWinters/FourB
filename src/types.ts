@@ -67,10 +67,14 @@ export interface InventoryMongo {
     total: number;
     name: string;
     price: number;
-    img: string;
+    img: string[];
     discount_price: number;
     use_discount: boolean;
     tags: string[]
+    code: string;
+    img_small: string[];
+    img_big: string[];
+    use_small_and_big: boolean;
 }
 
 export interface ItemsByCartMongo {
@@ -82,7 +86,11 @@ export interface ItemsByCartMongo {
     discount_price: number;
     use_discount: boolean;
     name: string;
-    img: string;
+    img: string[];
+    code: string;
+    img_small: string[];
+    img_big: string[];
+    use_small_and_big: boolean;
 }
 
 export interface PurchasesMongo {
@@ -96,7 +104,11 @@ export interface PurchasesMongo {
     user_id: ObjectId | null;
     session_id: ObjectId;
     date: Date;
-    img: string;
+    img: string[];
+    code: string;
+    img_small: string[];
+    img_big: string[];
+    use_small_and_big: boolean;
 }
 
 export interface CartsByUserMongo {
