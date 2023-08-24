@@ -253,6 +253,8 @@ app.get('/inventory', async (req, res) => {
 app.post('/inventory', async (req, res) => {
     try {
         const qty = req.body.qty
+        const qtySmall = req.body.qtySmall
+        const qtyBig = req.body.qtyBig
         const name = req.body.name
         const price = req.body.price
         const useSmallAndBig = req.body.useSmallAndBig
@@ -276,9 +278,6 @@ app.post('/inventory', async (req, res) => {
         const checkboxTalla9 = req.body.checkboxTalla9
         const checkboxTalla10 = req.body.checkboxTalla10
         const code = req.body.code
-        if (typeof qty !== "number") {
-            throw new Error("Quantity is required and must be a number")
-        }
         if (typeof price !== "number") {
             throw new Error("Price is required and must be a number")
         }
@@ -298,6 +297,9 @@ app.post('/inventory', async (req, res) => {
             if (!imgBig.every(item => typeof item === "string")) {
                 throw new Error("Images for big option must be strings")
             }
+            if (typeof qtyBig !== "number") {
+                throw new Error("Quantity Big is required and must be a number")
+            }
             if (!Array.isArray(imgSmall)) {
                 throw new Error("Images for small option are required and must be an array")
             }
@@ -306,6 +308,9 @@ app.post('/inventory', async (req, res) => {
             }
             if (!imgSmall.every(item => typeof item === "string")) {
                 throw new Error("Images for small option must be strings")
+            }
+            if (typeof qtySmall !== "number") {
+                throw new Error("Quantity Small is required and must be a number")
             }
         } else {
             if (!Array.isArray(img)) {
@@ -316,6 +321,9 @@ app.post('/inventory', async (req, res) => {
             }
             if (!img.every(item => typeof item === "string")) {
                 throw new Error("Images must be strings")
+            }
+            if (typeof qty !== "number") {
+                throw new Error("Quantity is required and must be a number")
             }
         }
         if (typeof discountPrice !== "number") {
@@ -425,7 +433,11 @@ app.post('/inventory', async (req, res) => {
             code,
             use_small_and_big: useSmallAndBig,
             img_big: imgBig,
-            img_small: imgSmall
+            img_small: imgSmall,
+            available_big: qtyBig,
+            total_big: qtyBig,
+            available_small: qtySmall,
+            total_small: qtySmall,
         })
         generateProductHTML({
             _id: inventoryResult.insertedId,
@@ -440,7 +452,11 @@ app.post('/inventory', async (req, res) => {
             code,
             use_small_and_big: useSmallAndBig,
             img_big: imgBig,
-            img_small: imgSmall
+            img_small: imgSmall,
+            available_big: qtyBig,
+            total_big: qtyBig,
+            available_small: qtySmall,
+            total_small: qtySmall,
         })
         res.status(200).json("OK!")
     } catch (e) {
@@ -456,8 +472,11 @@ app.patch('/inventory', async (req, res) => {
     try {
         const id = req.body.id
         const increment = req.body.increment || 0
+        const incrementSmall = req.body.incrementSmall || 0
+        const incrementBig = req.body.incrementBig || 0
         const name = req.body.name
         const price = req.body.price
+        const code = req.body.code
         const discountPrice = req.body.discountPrice
         const useDiscount = req.body.useDiscount
         const checkboxArete = req.body.checkboxArete
@@ -474,29 +493,66 @@ app.patch('/inventory', async (req, res) => {
         const checkboxTalla8 = req.body.checkboxTalla8
         const checkboxTalla9 = req.body.checkboxTalla9
         const checkboxTalla10 = req.body.checkboxTalla10
+        const useSmallAndBig = req.body.useSmallAndBig
+        const img = req.body.img as string[]
+        const imgBig = req.body.imgBig as string[]
+        const imgSmall = req.body.imgSmall as string[]
         if (typeof id !== "string") {
             throw new Error("ID is required and must be a string")
         }
         if (id.length !== 24) {
             throw new Error("ID must contain 24 characters")
         }
-        if (increment && typeof increment !== "number") {
-            throw new Error("Increment must be a number")
-        }
-        if (discountPrice && typeof discountPrice !== "number") {
+        if (typeof discountPrice !== "number") {
             throw new Error("Price must be a number")
         }
-        if (price && typeof price !== "number") {
+        if (typeof price !== "number") {
             throw new Error("Price must be a number")
         }
-        if (name && typeof name !== "string") {
+        if (typeof name !== "string") {
             throw new Error("Name must be a string")
         }
-        if (useDiscount && typeof useDiscount !== "boolean") {
+        if (typeof useDiscount !== "boolean") {
             throw new Error("Name must be a boolean")
         }
-        if (!(price || name || increment || discountPrice || useDiscount !== undefined)) {
-            throw new Error("At least one field is required")
+        if (useSmallAndBig) {
+            if (!Array.isArray(imgBig)) {
+                throw new Error("Images for big option are required and must be an array")
+            }
+            if (imgBig.length === 0) {
+                throw new Error("Images for big option must include at least one image")
+            }
+            if (!imgBig.every(item => typeof item === "string")) {
+                throw new Error("Images for big option must be strings")
+            }
+            if (incrementBig && typeof incrementBig !== "number") {
+                throw new Error("Quantity Big is required and must be a number")
+            }
+            if (!Array.isArray(imgSmall)) {
+                throw new Error("Images for small option are required and must be an array")
+            }
+            if (imgSmall.length === 0) {
+                throw new Error("Images for small option must include at least one image")
+            }
+            if (!imgSmall.every(item => typeof item === "string")) {
+                throw new Error("Images for small option must be strings")
+            }
+            if (incrementSmall && typeof incrementSmall !== "number") {
+                throw new Error("Quantity Small is required and must be a number")
+            }
+        } else {
+            if (!Array.isArray(img)) {
+                throw new Error("Images are required and must be an array")
+            }
+            if (img.length === 0) {
+                throw new Error("Images must include at least one image")
+            }
+            if (!img.every(item => typeof item === "string")) {
+                throw new Error("Images must be strings")
+            }
+            if (increment && typeof increment !== "number") {
+                throw new Error("Increment must be a number")
+            }
         }
         if (typeof checkboxCollar !== "boolean") {
             throw new Error("checkboxCollar must be a boolean")
@@ -539,6 +595,9 @@ app.patch('/inventory', async (req, res) => {
         }
         if (typeof checkboxArete !== "boolean") {
             throw new Error("checkboxArete must be a boolean")
+        }
+        if (typeof code !== "string") {
+            throw new Error("Code must be a string")
         }
         const tags = []
         if (checkboxArete) {
@@ -585,12 +644,26 @@ app.patch('/inventory', async (req, res) => {
         }
         const { inventory } = req.app.locals as ContextLocals
         const product_oid = new ObjectId(id)
-        const result = await inventory.findOneAndUpdate({
+        const filter: Filter<InventoryMongo> = {
             _id: product_oid,
-            available: {
+        }
+        if (increment) {
+            filter.available = {
                 $gte: -increment
             }
-        },
+        }
+        if (incrementBig) {
+            filter.available_big = {
+                $gte: -incrementBig
+            }
+        }
+        if (incrementSmall) {
+            filter.available_small = {
+                $gte: -incrementSmall
+            }
+        }
+        const result = await inventory.findOneAndUpdate(
+            filter,
             {
                 ...(increment ? {
                     $inc: {
@@ -598,15 +671,29 @@ app.patch('/inventory', async (req, res) => {
                         total: increment,
                     }
                 } : {}),
-                ...((name || price || discountPrice || typeof useDiscount === "boolean") ? {
-                    $set: {
-                        ...(name ? { name } : {}),
-                        ...(price ? { price } : {}),
-                        ...(discountPrice ? { discount_price: discountPrice } : {}),
-                        ...(typeof useDiscount === "boolean" ? { use_discount: useDiscount } : {}),
-                        tags,
+                ...(incrementBig ? {
+                    $inc: {
+                        available_big: incrementBig,
+                        total_big: incrementBig,
                     }
-                } : {})
+                } : {}),
+                ...(incrementSmall ? {
+                    $inc: {
+                        available_small: incrementSmall,
+                        total_small: incrementSmall,
+                    }
+                } : {}),
+                $set: {
+                    name,
+                    price,
+                    discount_price: discountPrice,
+                    use_discount: useDiscount,
+                    tags,
+                    code,
+                    use_small_and_big: useSmallAndBig,
+                    img_big: imgBig,
+                    img_small: imgSmall,
+                }
             },
             {
                 returnDocument: "after",
@@ -886,7 +973,9 @@ app.post('/add-to-cart', async (req, res) => {
         const ctx = Context.get(req);
         const { inventory, itemsByCart, reservedInventory, cartsByUser } = req.app.locals as ContextLocals
         const product_id = req.body.product_id
-        const qty = req.body.qty
+        const qty = req.body.qty || 0
+        const qtyBig = req.body.qtyBig || 0
+        const qtySmall = req.body.qtySmall || 0
         if (product_id && typeof product_id !== "string") {
             throw new Error("Product ID is required and must be a string")
         }
@@ -896,18 +985,40 @@ app.post('/add-to-cart', async (req, res) => {
         if (qty && typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
         }
+        if (qtyBig && typeof qtyBig !== "number") {
+            throw new Error("Quantity Big is required and must be a number")
+        }
+        if (qtySmall && typeof qtySmall !== "number") {
+            throw new Error("Quantity Small is required and must be a number")
+        }
         const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         const product_oid = new ObjectId(product_id)
-        const product = await inventory.findOneAndUpdate({
-            _id: product_oid,
-            available: {
+        const filter: Filter<InventoryMongo> = {
+            _id: product_oid
+        }
+        if (qty) {
+            filter.available = {
                 $gte: qty
             }
-        },
+        }
+        if (qtyBig) {
+            filter.available_big = {
+                $gte: qtyBig
+            }
+        }
+        if (qtySmall) {
+            filter.available_small = {
+                $gte: qtySmall
+            }
+        }
+        const product = await inventory.findOneAndUpdate(
+            filter,
             {
                 $inc: {
-                    available: -qty
-                },
+                    available: -qty,
+                    available_big: -qtyBig,
+                    available_small: -qtySmall,
+                }
             },
             {
                 returnDocument: "after"
@@ -926,6 +1037,8 @@ app.post('/add-to-cart', async (req, res) => {
             {
                 $inc: {
                     qty,
+                    qty_big: qtyBig,
+                    qty_small: qtySmall,
                 },
                 $setOnInsert: {
                     cart_id: cart_oid,
@@ -945,7 +1058,9 @@ app.post('/add-to-cart', async (req, res) => {
             },
             {
                 $inc: {
-                    qty
+                    qty,
+                    qty_big: qtyBig,
+                    qty_small: qtySmall,
                 },
                 $setOnInsert: {
                     name: value.name,
@@ -956,6 +1071,9 @@ app.post('/add-to-cart', async (req, res) => {
                     use_discount: value.use_discount,
                     img: value.img,
                     code: value.code,
+                    img_big: value.img_big,
+                    img_small: value.img_small,
+                    use_small_and_big: value.use_small_and_big,
                 }
             },
             {
@@ -989,7 +1107,9 @@ app.patch('/add-to-cart', async (req, res) => {
         const { inventory, itemsByCart, reservedInventory, cartsByUser } = req.app.locals as ContextLocals
         const item_by_cart_id = req.body.item_by_cart_id
         const product_id = req.body.product_id
-        const qty = req.body.qty
+        const qty = req.body.qty || 0
+        const qtyBig = req.body.qtyBig || 0
+        const qtySmall = req.body.qtySmall || 0
         if (product_id && typeof product_id !== "string") {
             throw new Error("Product ID is required and must be a string")
         }
@@ -1002,8 +1122,14 @@ app.patch('/add-to-cart', async (req, res) => {
         if (item_by_cart_id.length !== 24) {
             throw new Error("Product cart ID must contain 24 characters")
         }
-        if (qty && typeof qty !== "number") {
+        if (typeof qty !== "number") {
             throw new Error("Quantity is required and must be a number")
+        }
+        if (typeof qtyBig !== "number") {
+            throw new Error("Quantity Big is required and must be a number")
+        }
+        if (typeof qtySmall !== "number") {
+            throw new Error("Quantity Small is required and must be a number")
         }
         const cart_oid = new ObjectId(ctx?.userJWT?.user.cart_id || ctx?.sessionCookie?.cart_id)
         const product_oid = new ObjectId(product_id)
@@ -1014,15 +1140,31 @@ app.patch('/add-to-cart', async (req, res) => {
         if (!reserved.value) {
             throw new Error("Item not reserved.")
         }
-        const product = await inventory.findOneAndUpdate({
+        const filter: Filter<InventoryMongo> = {
             _id: product_oid,
-            available: {
+        }
+        if (qty) {
+            filter.available = {
                 $gte: qty - reserved.value.qty,
             }
-        },
+        }
+        if (qtyBig) {
+            filter.available_big = {
+                $gte: qtyBig - reserved.value.qty_big,
+            }
+        }
+        if (qtySmall) {
+            filter.available_small = {
+                $gte: qtySmall - reserved.value.qty_small,
+            }
+        }
+        const product = await inventory.findOneAndUpdate(
+            filter,
             {
                 $inc: {
                     available: reserved.value.qty - qty,
+                    available_big: reserved.value.qty_big - qtyBig,
+                    available_small: reserved.value.qty_small - qtySmall,
                 },
             },
             {
@@ -1042,10 +1184,8 @@ app.patch('/add-to-cart', async (req, res) => {
             {
                 $set: {
                     qty,
-                    price: value.price,
-                    name: value.name,
-                    discount_price: value.discount_price,
-                    use_discount: value.use_discount,
+                    qty_big: qtyBig,
+                    qty_small: qtySmall,
                 },
             },
         )
@@ -1059,6 +1199,8 @@ app.patch('/add-to-cart', async (req, res) => {
                 qty,
                 cart_id: cart_oid,
                 product_id: product_oid,
+                qty_big: qtyBig,
+                qty_small: qtySmall,
             })
         if (!newReserved.insertedId) {
             throw new Error("Item not reserved.")
@@ -1135,7 +1277,9 @@ app.delete('/add-to-cart', async (req, res) => {
         },
             {
                 $inc: {
-                    available: reservation.value.qty
+                    available: reservation.value.qty,
+                    available_small: reservation.value.qty_small,
+                    available_big: reservation.value.qty_big,
                 },
             })
         const { value } = product
@@ -1227,7 +1371,7 @@ app.post('/checkout', async (req, res) => {
                 line_items: products.map(product => ({
                     name: product.name,
                     unit_price: product.use_discount ? product.discount_price : product.price,
-                    quantity: product.qty
+                    quantity: product.use_small_and_big ? product.qty_big ? product.qty_big : product.qty_small : product.qty,
                 })),
                 checkout: {
                     type: 'Integration',
@@ -1284,7 +1428,7 @@ app.post('/checkout', async (req, res) => {
                 line_items: products.map(product => ({
                     name: product.name,
                     unit_price: product.use_discount ? product.discount_price : product.price,
-                    quantity: product.qty
+                    quantity: product.use_small_and_big ? product.qty_big ? product.qty_big : product.qty_small : product.qty,
                 })),
                 checkout: {
                     type: 'Integration',
@@ -1347,7 +1491,7 @@ app.post('/checkout', async (req, res) => {
                 line_items: products.map(product => ({
                     name: product.name,
                     unit_price: product.use_discount ? product.discount_price : product.price,
-                    quantity: product.qty
+                    quantity: product.use_small_and_big ? product.qty_big ? product.qty_big : product.qty_small : product.qty,
                 })),
                 checkout: {
                     type: 'Integration',
@@ -1419,6 +1563,8 @@ app.post('/confirmation', async (req, res) => {
                 name: product.name,
                 product_id: product.product_id,
                 qty: product.qty,
+                qty_big: product.qty_big,
+                qty_small: product.qty_small,
                 price: product.price,
                 discount_price: product.discount_price,
                 use_discount: product.use_discount,
@@ -1508,10 +1654,12 @@ app.post('/confirmation', async (req, res) => {
 
             ])
             const productsInCart = await itemsByCart.find({ cart_id: previous_cart_id }).toArray()
-            const purchasedProducts = productsInCart.map(product => ({
+            const purchasedProducts: PurchasesMongo[] = productsInCart.map(product => ({
                 name: product.name,
                 product_id: product._id,
                 qty: product.qty,
+                qty_small: product.qty_small,
+                qty_big: product.qty_big,
                 price: product.price,
                 discount_price: product.discount_price,
                 use_discount: product.use_discount,
@@ -1641,14 +1789,14 @@ app.get('*', async (req, res) => {
 });
 
 //Define site pages
-//Copiar estilos de https://www.fourb.online/ y hacerlo responsive
-//Copiar un poco del inventario
-//Keep session if active user?
-//Keep cart if active user?
-//Do not store session in database?
-//SEO
-//Big y small
-//3 opciones de entrega
+//Copiar estilos de https://www.fourb.online/ y hacerlo responsive (prio)
+//Copiar un poco del inventario (prio)
+//Keep session if active user? (delay)
+//Keep cart if active user? (delay)
+//Do not store session in database? (delay)
+//SEO (delay)
+//Big y small (prio)
+//3 opciones de entrega (prio)
 //Reduce costs! Beanstalk to single EC2 instance? Use rust? Drop AWS?
 
 MongoClient.connect(MONGO_DB || "mongodb://mongo-fourb:27017", {}).then(async (client) => {
@@ -1673,7 +1821,16 @@ MongoClient.connect(MONGO_DB || "mongodb://mongo-fourb:27017", {}).then(async (c
                 if (cartExpireTime < now) {
                     const items = await itemsByCart.find({ cart_id: cart._id }).toArray()
                     for (const item of items) {
-                        await inventory.updateOne({ _id: item.product_id }, { $inc: { available: item.qty } })
+                        await inventory.updateOne({
+                            _id: item.product_id
+                        },
+                        {
+                            $inc: {
+                                available: item.qty,
+                                available_big: item.qty_big,
+                                available_small: item.qty_small,
+                            }
+                        })
                     }
                     await itemsByCart.deleteMany({ cart_id: cart._id })
                     await reservedInventory.deleteMany({ cart_id: cart._id })

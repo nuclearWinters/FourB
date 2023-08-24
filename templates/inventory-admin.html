@@ -41,11 +41,80 @@
                   </div>
                   <input onwheel="return false;" id="discount-${product._id}" type="number" pattern="\d*" step="any" name="discount" value="${toCurrency(String(product.discount_price), '.')}" required />
                 </div>
-                <div class="input-container">
-                  <label for="increment-${product._id}">Añadir al inventario</label>
-                  <input onwheel="return false;" id="increment-${product._id}" type="number" value="0" name="increment" />
+                <div class="input-container checkbox-big-and-small">
+                  <label for="">Opciones</label>
+                  <div>
+                    <input type="checkbox" id="checkboxBigAndSmall-${product._id}" class="checkboxBigAndSmall" name="checkboxBigAndSmall" ${product.use_small_and_big ? 'checked' : ''} />
+                    <label for="checkboxBigAndSmall-${product._id}">Tiene opcion pequeña y grande</label>
+                  </div>
                 </div>
-                <div id="images-container" class="input-container">
+                <div class="input-container img-big">
+                  <label for="image-big">Imagenes version grande</label>
+                  <input name="image-big" multiple="multiple" id="file-input-big-${product._id}" type="file" accept="png,jpg,jpeg" />
+                </div>
+                <div id="images-container-big-${product._id}" class="input-container images-container big">
+                  ${(product?.img_big?.map?.((img, index) => {
+              return `<div id="image-container-big-${index}" style="position: relative">
+                      <button
+                        id="remove-image-big-${index}"
+                        style="font-weigth: bold; position: absolute; top: 0px; right: 0px;cursor: pointer;
+                        padding: 6px 10px;
+                        background: white;
+                        border-radius: 100%;
+                        border: 1px solid black;
+                        box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2)">x</button>
+                      <img class="img-uploaded" id="img-uploaded-${index}" alt="" width="100%" src="${img}" />
+                    </div>`
+            }) || []).join()}
+                </div>
+                <div class="input-container quantity-product-container-big">
+                  <label for="qtyBig">Añadir al inventario</label>
+                  <input id="qty-product-big-${product._id}" name="qtyBig" required type="number" onwheel="return false;" value="0" />
+                </div>
+                <div class="total-available-box-big">
+                  <div id="available-big-${product._id}" class="price">
+                    Disponible: ${product.available_big}</span>
+                  </div>
+                  <div id="total-big-${product._id}" class="price">
+                    Total: ${product.total_big}</span>
+                  </div>
+                </div>
+                <div class="input-container img-small">
+                  <label for="image-small">Imagenes version chica</label>
+                  <input name="image-small" multiple="multiple" id="file-input-small-${product._id}" type="file" accept="png,jpg,jpeg" />
+                </div>
+                <div id="images-container-small-${product._id}" class="input-container images-container small">
+                  ${(product?.img_small?.map?.((img, index) => {
+              return `<div id="image-container-small-${index}" style="position: relative">
+                      <button
+                        id="remove-image-small-${index}"
+                        style="font-weigth: bold; position: absolute; top: 0px; right: 0px;cursor: pointer;
+                        padding: 6px 10px;
+                        background: white;
+                        border-radius: 100%;
+                        border: 1px solid black;
+                        box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2)">x</button>
+                      <img class="img-uploaded" id="img-uploaded-${index}" alt="" width="100%" src="${img}" />
+                    </div>`
+            }) || []).join()}
+                </div>
+                <div class="input-container quantity-product-container-small">
+                  <label for="qtySmall">Añadir al inventario</label>
+                  <input id="qty-product-small-${product._id}" name="qtySmall" required type="number" onwheel="return false;" value="0" />
+                </div>
+                <div class="total-available-box-small">
+                  <div id="available-big-${product._id}" class="price">
+                    Disponible: ${product.available_small}</span>
+                  </div>
+                  <div id="total-big-${product._id}" class="price">
+                    Total: ${product.total_small}</span>
+                  </div>
+                </div>
+                <div class="input-container imgs">
+                  <label for="image">Imagenes</label>
+                  <input name="image" multiple="multiple" id="file-input-${product._id}" type="file" accept="png,jpg,jpeg" />
+                </div>
+                <div id="images-container-${product._id}" class="input-container images-container normal">
                   ${(product?.img?.map?.((img, index) => {
               return `<div id="image-container-${index}" style="position: relative">
                       <button
@@ -60,11 +129,17 @@
                     </div>`
             }) || []).join()}
                 </div>
-                <div id="available-${product._id}" class="price">
-                  Disponible: ${product.available}</span>
+                <div class="input-container increment-input-box">
+                  <label for="increment-${product._id}">Añadir al inventario</label>
+                  <input onwheel="return false;" id="increment-${product._id}" type="number" value="0" name="increment" />
                 </div>
-                <div id="total-${product._id}" class="price">
-                  Total: ${product.total}</span>
+                <div class="total-available-box">
+                  <div id="available-${product._id}" class="price">
+                    Disponible: ${product.available}</span>
+                  </div>
+                  <div id="total-${product._id}" class="price">
+                    Total: ${product.total}</span>
+                  </div>
                 </div>
                 <div class="input-container">
                   <label for="discount">Tags</label>
@@ -134,6 +209,33 @@
               </form>
             </div>`
           )
+          product?.img?.forEach?.((img, index) => {
+            const imgRemove = document.getElementById("remove-image-" + index)
+            const imgContainer = document.getElementById("image-container-" + index)
+            if (imgRemove) {
+              imgRemove.onclick = () => {
+                imgContainer.remove()
+              }
+            }
+          })
+          product?.img_small?.forEach?.((img, index) => {
+            const imgRemove = document.getElementById("remove-image-small-" + index)
+            const imgContainer = document.getElementById("image-container-small-" + index)
+            if (imgRemove) {
+              imgRemove.onclick = () => {
+                imgContainer.remove()
+              }
+            }
+          })
+          product?.img_big?.forEach?.((img, index) => {
+            const imgRemove = document.getElementById("remove-image-big-" + index)
+            const imgContainer = document.getElementById("image-container-big-" + index)
+            if (imgRemove) {
+              imgRemove.onclick = () => {
+                imgContainer.remove()
+              }
+            }
+          })
           const priceInput = document.getElementById(`currency-${product._id}`)
           priceInput.oninput = (e) => {
             const valueAsCurrency = toCurrency(e.target.value, '.')
@@ -147,16 +249,92 @@
           const form = document.getElementById(`update-product-${product._id}`)
           const available = document.getElementById(`available-${product._id}`)
           const total = document.getElementById(`total-${product._id}`)
+          const fileInputCallback = (name) => async (event) => {
+            try {
+              const imagesContainer = document.getElementById(name)
+              const files = event.target.files
+              for (const file of files) {
+                if (file.type) {
+                  const response = await fetchWrapper("https://{{domain}}/signed-url", {
+                    method: "POST",
+                    body: JSON.stringify({
+                      fileType: file.type,
+                    })
+                  })
+                  const url = new URL(response.uploadUrl);
+                  const img = `<div data-src="${url.origin + url.pathname}" id="image-container-${file.lastModified}" style="position: relative">
+                    <button
+                      id="remove-image-${file.lastModified}"
+                      style="font-weigth: bold; position: absolute; top: 0px; right: 0px;cursor: pointer;
+                      padding: 6px 10px;
+                      background: white;
+                      border-radius: 100%;
+                      border: 1px solid black;
+                      box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2)">x</button>
+                    <img class="img-uploaded" id="img-uploaded-${file.lastModified}" alt="" width="100%" />
+                  </div>`
+                  insertBeforeHTML(imagesContainer, img)
+                  const awsResponse = await fetch(response.uploadUrl, {
+                    method: "PUT",
+                    body: file,
+                  })
+                  const imgUploaded = document.getElementById("img-uploaded-" + file.lastModified)
+                  if (imgUploaded) {
+                    imgUploaded.src = url.origin + url.pathname
+                  }
+                  const imgRemove = document.getElementById("remove-image-" + file.lastModified)
+                  const imgContainer = document.getElementById("image-container-" + file.lastModified)
+                  if (imgRemove) {
+                    imgRemove.onclick = () => {
+                      imgContainer.remove()
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              if (e instanceof Error) {
+                alert(e.message)
+              } else {
+                alert("Error")
+              }
+            }
+          }
+          const fileInput = document.getElementById("file-input-" + product._id)
+          if (fileInput) {
+            fileInput.addEventListener("input", fileInputCallback("images-container-" + product._id))
+          }
           form.addEventListener("submit", async (e) => {
             try {
               e.preventDefault()
+              const images = document.getElementById("images-container-" + product._id)
+              const imagesArray = []
+              const imagesArraySmall = []
+              const imagesArrayBig = []
+              for (const img of images?.children || []) {
+                imagesArray.push(img.children[1].currentSrc)
+              }
+              if (form.useSmallAndBig) {
+                const imagesSmall = document.getElementById("images-container-small-" + product._id)
+                const imagesBig = document.getElementById("images-container-big-" + product._id)
+                for (const img of (imagesSmall?.children || [])) {
+                  imagesArraySmall.push(img.children[1].currentSrc)
+                }
+                for (const img of (imagesBig?.children || [])) {
+                  imagesArrayBig.push(img.children[1].currentSrc)
+                }
+              }
               const data = await fetchWrapper("https://{{domain}}/inventory", {
                 method: "PATCH",
                 body: JSON.stringify({
                   id: product._id,
                   name: form.name.value,
                   increment: Number(form.increment.value),
+                  img: imagesArray,
+                  imgBig: imagesArrayBig,
+                  imgSmall: imagesArraySmall,
                   code: form.code.value,
+                  qtySmall: Number(form.qtySmall.value),
+                  qtyBig: Number(form.qtyBig.value),
                   price: Number(form.currency.value) * 100,
                   discountPrice: Number(form.discount.value) * 100,
                   useDiscount: form.checkboxDiscount.checked,
@@ -203,10 +381,6 @@
       <input id="code-product" name="code" required type="text" />
     </div>
     <div class="input-container">
-      <label for="qty">Cantidad</label>
-      <input id="qty-product" name="qty" required type="number" onwheel="return false;" />
-    </div>
-    <div class="input-container">
       <label for="currency">Precio</label>
       <input id="currency" type="number" pattern="\d*" step="any" name="currency" value="0.00" required
         onwheel="return false;" />
@@ -223,7 +397,7 @@
     <div class="input-container checkbox-big-and-small">
       <label for="">Opciones</label>
       <div>
-        <input type="checkbox" id="checkboxBigAndSmall" name="checkboxBigAndSmall" />
+        <input type="checkbox" id="checkboxBigAndSmall" name="checkboxBigAndSmall" class="checkboxBigAndSmall" />
         <label for="checkboxBigAndSmall">Tiene opcion pequeña y grande</label>
       </div>
     </div>
@@ -231,17 +405,29 @@
       <label for="image-big">Imagenes version grande</label>
       <input name="image-big" multiple="multiple" id="file-input-big" type="file" accept="png,jpg,jpeg" />
     </div>
-    <div id="images-container-big" class="input-container images-container"></div>
+    <div id="images-container-big" class="input-container images-container big"></div>
+    <div class="input-container quantity-product-container-big">
+      <label for="qtyBig">Cantidad</label>
+      <input id="qty-product-big" name="qtyBig" required type="number" value="0" onwheel="return false;" />
+    </div>
     <div class="input-container img-small">
       <label for="image-small">Imagenes version chica</label>
       <input name="image-small" multiple="multiple" id="file-input-small" type="file" accept="png,jpg,jpeg" />
     </div>
-    <div id="images-container-small" class="input-container images-container"></div>
+    <div id="images-container-small" class="input-container images-container small"></div>
+    <div class="input-container quantity-product-container-small">
+      <label for="qtySmall">Cantidad</label>
+      <input id="qty-product-small" name="qtySmall" required type="number" value="0" onwheel="return false;" />
+    </div>
     <div class="input-container imgs">
       <label for="image">Imagenes</label>
       <input name="image" multiple="multiple" id="file-input" type="file" accept="png,jpg,jpeg" />
     </div>
-    <div id="images-container" class="input-container images-container">
+    <div id="images-container" class="input-container images-container normal">
+    </div>
+    <div class="input-container quantity-product-container">
+      <label for="qty">Cantidad</label>
+      <input id="qty-product" name="qty" required type="number" value="0" onwheel="return false;" />
     </div>
     <div class="input-container">
       <label for="discount">Tags</label>
@@ -317,17 +503,17 @@
       const imagesArray = []
       const imagesArraySmall = []
       const imagesArrayBig = []
-      for (const img of images?.children?.children || []) {
-        imagesArray.push(img.currentSrc)
+      for (const img of images?.children || []) {
+        imagesArray.push(img.dataset.src)
       }
-      if (form.useSmallAndBig) {
+      if (form.checkboxBigAndSmall) {
         const imagesSmall = document.getElementById("images-container-small")
         const imagesBig = document.getElementById("images-container-big")
-        for (const img of (imagesSmall?.children?.children || [])) {
-          imagesArraySmall.push(img.currentSrc)
+        for (const img of (imagesSmall?.children || [])) {
+          imagesArraySmall.push(img.dataset.src)
         }
-        for (const img of (imagesBig?.children?.children || [])) {
-          imagesArrayBig.push(img.currentSrc)
+        for (const img of (imagesBig?.children || [])) {
+          imagesArrayBig.push(img.dataset.src)
         }
       }
       try {
@@ -341,6 +527,8 @@
             imgBig: imagesArrayBig,
             imgSmall: imagesArraySmall,
             code: form.code.value,
+            qtySmall: Number(form.qtySmall.value),
+            qtyBig: Number(form.qtyBig.value),
             useSmallAndBig: form.checkboxBigAndSmall.checked,
             discountPrice: Number(form.discount.value) * 100,
             useDiscount: form.checkboxDiscount.checked,
@@ -387,13 +575,18 @@
     }
     const fileInputCallback = (name) => async (event) => {
       try {
-        console.log("name", name)
         const imagesContainer = document.getElementById(name)
         const files = event.target.files
-        for (const index in files) {
-          const file = files[index]
+        for (const file of files) {
           if (file.type) {
-            const img = `<div id="image-container-${file.lastModified}" style="position: relative">
+            const response = await fetchWrapper("https://{{domain}}/signed-url", {
+              method: "POST",
+              body: JSON.stringify({
+                fileType: file.type,
+              })
+            })
+            const url = new URL(response.uploadUrl);
+            const img = `<div data-src="${url.origin + url.pathname}" id="image-container-${file.lastModified}" style="position: relative">
                 <button
                   id="remove-image-${file.lastModified}"
                   style="font-weigth: bold; position: absolute; top: 0px; right: 0px;cursor: pointer;
@@ -405,17 +598,10 @@
                 <img class="img-uploaded" id="img-uploaded-${file.lastModified}" alt="" width="100%" />
               </div>`
             insertBeforeHTML(imagesContainer, img)
-            const response = await fetchWrapper("https://{{domain}}/signed-url", {
-              method: "POST",
-              body: JSON.stringify({
-                fileType: file.type,
-              })
-            })
             const awsResponse = await fetch(response.uploadUrl, {
               method: "PUT",
               body: file,
             })
-            const url = new URL(response.uploadUrl);
             const imgUploaded = document.getElementById("img-uploaded-" + file.lastModified)
             if (imgUploaded) {
               imgUploaded.src = url.origin + url.pathname

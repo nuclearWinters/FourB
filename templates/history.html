@@ -20,16 +20,16 @@
           insertHTML(
             list,
             `<div class="product-card">
-              <div class="name">${product.name}</div>
+              <div class="name">${product.name}${product.use_small_and_big ? product.qty_big ? " (Tamaño Grande)" : " (Tamaño Pequeño)" : ""}</div>
               <div class="price">
                 Precio unitario: $${((product.use_discount ? product.discount_price : product.price) / 100).toFixed(2)}</span>
               </div>
-              <img class="img-product" src="${product.img}" />
+              <img class="img-product" src="${product.use_small_and_big ? product.qty_big ? product.img_big[0] : product.img_small[0] : product.img[0]}" />
               <div class="price">
-                Cantidad: ${product.qty}</span>
+                Cantidad: ${product.qty || product.qty_big || product.qty_small}</span>
               </div>
               <div class="price">
-                Total: $${(((product.use_discount ? product.discount_price : product.price) * product.qty) / 100).toFixed(2)}</span>
+                Total: $${(((product.use_discount ? product.discount_price : product.price) * (product.qty || product.qty_big || product.qty_small)) / 100).toFixed(2)}</span>
               </div>
               <button class="fourb-button" onclick="(() => {
                 window.location.href = '/product-${product.product_id}'

@@ -75,6 +75,10 @@ export interface InventoryMongo {
     img_small: string[];
     img_big: string[];
     use_small_and_big: boolean;
+    available_small: number;
+    total_small: number;
+    available_big: number;
+    total_big: number;
 }
 
 export interface ItemsByCartMongo {
@@ -82,6 +86,8 @@ export interface ItemsByCartMongo {
     product_id: ObjectId,
     cart_id: ObjectId,
     qty: number;
+    qty_big: number;
+    qty_small: number;
     price: number;
     discount_price: number;
     use_discount: boolean;
@@ -97,6 +103,8 @@ export interface PurchasesMongo {
     _id?: ObjectId;
     product_id: ObjectId,
     qty: number;
+    qty_big: number;
+    qty_small: number;
     price: number;
     discount_price: number;
     use_discount: boolean;
@@ -122,6 +130,8 @@ export interface ReservedInventoryMongo {
     cart_id: ObjectId;
     product_id: ObjectId;
     qty: number;
+    qty_small: number;
+    qty_big: number;
 }
 
 export interface ContextLocals {

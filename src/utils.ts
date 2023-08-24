@@ -8,7 +8,7 @@ export const createHTML = async (db: Db) => {
     const productsHtml = fs.readFileSync('templates/product.html', 'utf8');
     const products = await db.collection<InventoryMongo>("inventory").find().toArray()
     products.forEach(item => {
-        const template = Handlebars.compile(productsHtml);
+        const template = Handlebars.compile(productsHtml, { noEscape: true });
         const result = template({
             ...item,
             _id: item._id.toHexString(),
@@ -17,9 +17,18 @@ export const createHTML = async (db: Db) => {
             buttonText: item.available ? "Añadir al carrito" : "Agotado",
             buttonProps: item.available ? "" : "disabled",
             domain: VIRTUAL_HOST,
-            img: item.img,
+            img: item.img[0],
             priceClass: item.use_discount ? "price-discounted" : "",
             discontPriceClass: item.use_discount ? "" : "",
+            bigAndSmallClass: item.use_small_and_big ? "" : "hideBigAndSmall",
+            checkedBig: item.available_big ? "checked" : "",
+            checkedSmall: item.available_big ? "" : "checked",
+            imageTemplate: item.use_small_and_big
+                ? (
+                    `<img id="img-product-big" ${item.available_big ? "" : 'style="display: none;"'} class="img-product" src="${item.img_big[0]}" />
+                    <img id="img-product-small" ${item.available_big ? 'style="display: none;"' : ""} class="img-product" src="${item.img_small[0]}" />`
+                )
+                : `<img id="img-product" class="img-product" src="${item.img[0]}" />`
         });
         fs.writeFileSync(`static/product-${item._id}.html`, result)
     })
@@ -96,7 +105,7 @@ export const generateProductHTML = (value: InventoryMongo) => {
         buttonText: value.available ? "Añadir al carrito" : "Agotado",
         buttonProps: value.available ? "" : "disabled",
         domain: VIRTUAL_HOST,
-        img: value.img,
+        img: value.img[0],
         priceClass: value.use_discount ? "price-discounted" : "",
         discontPriceClass: value.use_discount ? "" : "",
         code: value.code,

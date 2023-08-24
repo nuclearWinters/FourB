@@ -17,7 +17,31 @@
     <span class="{{priceClass}}">{{price}}</span>
     <span class="{{discontPriceClass}}">{{discountPrice}}</span>
   </div>
-  <img class="img-product" src="{{img}}" />
+  {{imageTemplate}}
+  <div style="margin-bottom: 10px;">
+    <input id="checkbox-big" name="big" {{checkedBig}} type="checkbox" onclick='(() => {
+      const checkedBig = document.getElementById("checkbox-big");
+      checkedBig.checked = true;
+      const checkedSmall = document.getElementById("checkbox-small");
+      checkedSmall.checked = false;
+      const productImageBig = document.getElementById("img-product-big");
+      productImageBig.style = "display: flex;"
+      const productImageSmall = document.getElementById("img-product-small");
+      productImageSmall.style = "display: none;"
+    })()' />
+    <label for="checkbox-big">Grande</label>
+    <input id="checkbox-small" name="small" {{checkedSmall}} type="checkbox" onclick='(() => {
+      const checkedBig = document.getElementById("checkbox-big");
+      checkedBig.checked = false;
+      const checkedSmall = document.getElementById("checkbox-small");
+      checkedSmall.checked = true;
+      const productImageBig = document.getElementById("img-product-big");
+      productImageBig.style = "display: none;"
+      const productImageSmall = document.getElementById("img-product-small");
+      productImageSmall.style = "display: flex;"
+    })()' />
+    <label for="checkbox-small">Pequeño</label>
+  </div>
   <button class="fourb-button" id="add-to-cart-button" {{buttonProps}}>{{buttonText}}</button>
 </body>
 <script type="module">

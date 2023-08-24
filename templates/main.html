@@ -21,13 +21,46 @@
           list,
           `<div class="product-card">
               <a href="/product-${product._id}">
-                <img class="img-product" src="${product.img}" />
+                ${product.use_small_and_big
+            ? (
+              `<img id="img-product-big-${product._id}" ${product.available_big ? "" : 'style="display: none;"'} class="img-product" src="${product.img_big[0]}" />
+              <img id="img-product-small-${product._id}" ${product.available_big ? 'style="display: none;"' : ""} class="img-product" src="${product.img_small[0]}" />`
+            )
+            : `<img id="img-product-${product._id}" class="img-product" src="${product.img[0]}" />`
+          }
+                ${!product.use_small_and_big ? `<img id="img-product" class="img-product" src="${product.img[0]}" />` : ""}
                 <div class="name">${product.name}</div>
                 <div class="price">
                   <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
                   ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
                 </div>
               </a>
+              ${product.use_small_and_big ? (
+            `<div style="margin-bottom: 10px;">
+                  <input id="checkbox-big-${product._id}" name="big" ${product.available_big ? "checked" : ""} type="checkbox" onclick='(() => {
+                    const checkedBig = document.getElementById("checkbox-big-${product._id}");
+                    checkedBig.checked = true;
+                    const checkedSmall = document.getElementById("checkbox-small-${product._id}");
+                    checkedSmall.checked = false;
+                    const productImageBig = document.getElementById("img-product-big-${product._id}");
+                    productImageBig.style = "display: flex;"
+                    const productImageSmall = document.getElementById("img-product-small-${product._id}");
+                    productImageSmall.style = "display: none;"
+                  })()' />
+                  <label for="checkbox-big-${product._id}">Grande</label>
+                  <input id="checkbox-small-${product._id}" name="small" ${product.available_big ? "" : "checked"} type="checkbox" onclick='(() => {
+                    const checkedBig = document.getElementById("checkbox-big-${product._id}");
+                    checkedBig.checked = false;
+                    const checkedSmall = document.getElementById("checkbox-small-${product._id}");
+                    checkedSmall.checked = true;
+                    const productImageBig = document.getElementById("img-product-big-${product._id}");
+                    productImageBig.style = "display: none;"
+                    const productImageSmall = document.getElementById("img-product-small-${product._id}");
+                    productImageSmall.style = "display: flex;"
+                  })()' />
+                  <label for="checkbox-small-${product._id}">Pequeño</label>
+                </div>`
+          ) : ""}
               <button id="add-to-cart-${product._id}" class="fourb-button">
                 AÑADIR AL CARRITO
               </button>
@@ -36,11 +69,15 @@
         const buyButton = document.getElementById(`add-to-cart-${product._id}`)
         buyButton.onclick = async () => {
           try {
+            const checkedBig = document.getElementById("checkbox-big-" + product._id);
+            const checkedSmall = document.getElementById("checkbox-small-" + product._id);
             const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
               method: "POST",
               body: JSON.stringify({
                 product_id: product._id,
-                qty: 1
+                qty: !product.use_small_and_big ? 1 : undefined,
+                qtyBig: product.use_small_and_big && checkedBig.checked ? 1 : undefined,
+                qtySmall: product.use_small_and_big && checkedSmall.checked ? 1 : undefined,
               })
             })
             alert("Añadido al carrito")
@@ -66,7 +103,7 @@
           list,
           `<div class="product-card">
               <a href="/product-${product._id}">
-                <img class="img-product" src="${product.img}" />
+                <img class="img-product" src="${product.img[0]}" />
                 <div class="name">${product.name}</div>
                 <div class="price">
                   <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>

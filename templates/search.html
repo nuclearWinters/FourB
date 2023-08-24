@@ -35,8 +35,8 @@
                     list,
                     `<div class="product-card">
                       <a href="/product-${product._id}">
-                        <img class="img-product" src="${product.img}" />
-                        <div class="name">${product.name}</div>
+                        <img class="img-product" src="${product.img[0]}" />
+                        <div class="name">${product.name}${product.use_small_and_big ? product.qty_big ? " (Tamaño Grande)" : " (Tamaño Pequeño)" : ""}</div>
                         <div class="price">
                           <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
                           ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}

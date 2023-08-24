@@ -28,18 +28,18 @@
           insertHTML(
             list,
             `<div id="${product._id}-product" class="product-card">
-              <div class="name">${product.name}</div>
+              <div class="name">${product.name}${product.use_small_and_big ? product.qty_big ? " (Tamaño Grande)" : " (Tamaño Pequeño)" : ""}</div>
               <div class="price">
                 <span>Precio: </span>
                 <span class="${product.use_discount ? "price-discounted" : ""}">$${(product.price / 100).toFixed(2)}</span>
                 ${product.use_discount ? `<span>$${(product.discount_price / 100).toFixed(2)}</span>` : ""}
               </div>
-              <img class="img-product" src="${product.img}" />
+              <img class="img-product" src="${product.use_small_and_big ? product.qty_big ? product.img_big[0] : product.img_small[0] : product.img[0]}" />
               <div class="input-container">
                 <label for="${product._id}-quantity">Cantidad</label>
-                <input type="number" id="${product._id}-quantity" value=${product.qty} min="1" />
+                <input type="number" id="${product._id}-quantity" value=${product.qty || product.qty_big || product.qty_small} min="1" />
               </div>
-              <div class="price">Total: $${(((product.use_discount ? product.discount_price : product.price) * product.qty) / 100).toFixed(2)}</div>
+              <div class="price">Total: $${(((product.use_discount ? product.discount_price : product.price) * (product.qty || product.qty_big || product.qty_small)) / 100).toFixed(2)}</div>
               <button class="fourb-button" onclick="(() => {
                 window.location.href = '/product-${product.product_id}'
               })()">VER</button>
@@ -55,12 +55,13 @@
           updateButton.onclick = async () => {
             try {
               const input = document.getElementById(`${product._id}-quantity`)
+              const qtyType = product.qty ? "qty" : product.qty_big ? "qtyBig" : "qtySmall"
               const data = await fetchWrapper('https://{{domain}}/add-to-cart', {
                 method: "PATCH",
                 body: JSON.stringify({
                   item_by_cart_id: product._id,
                   product_id: product.product_id,
-                  qty: Number(input.value)
+                  [qtyType]: Number(input.value),
                 })
               })
               alert("Producto actualizado en el carrito")
